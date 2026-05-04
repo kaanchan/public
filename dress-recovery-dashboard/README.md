@@ -1,6 +1,6 @@
 # DRESS Recovery Dashboard
 
-**[Open the dashboard →](index.html)**
+**[Open the dashboard →](https://kaanchan.github.io/public/dress-recovery-dashboard/)**
 
 A bilingual (English / Nepali) family-facing recovery tracker for a patient with DRESS Syndrome (Drug Reaction with Eosinophilia and Systemic Symptoms). Displays 20+ lab markers across four organ systems — kidneys, liver, blood & immune, electrolytes — with daily scoring, trend analysis, composite charts, and a heatmap calendar.
 
