@@ -219,11 +219,11 @@ function mkChart(id,mKey){
       pointRadius:0,fill:'+1',tension:.3,spanGaps:true,order:5,
     });
     datasets.push({
-      label:'Lower bound',data:loD,borderColor:'transparent',backgroundColor:'transparent',
+      label:t('legend_lower_bound'),data:loD,borderColor:'transparent',backgroundColor:'transparent',
       pointRadius:0,fill:false,tension:.3,spanGaps:true,order:6,
     });
     datasets.push({
-      label:'Projected',data:projD,
+      label:t('legend_projected'),data:projD,
       borderColor:sysHexC,backgroundColor:'transparent',
       borderWidth:1.5,borderDash:[5,4],tension:.4,spanGaps:true,
       pointRadius:projD.map((v,i)=>v!==null&&i>=m.v.length-1?2:0),
@@ -239,8 +239,8 @@ function mkChart(id,mKey){
       tooltip:{
         backgroundColor:cvar('--ink'),titleColor:cvar('--card'),bodyColor:cvar('--card'),
         titleFont:{family:'Inter Tight',size:11,weight:'600'},bodyFont:{family:'Inter Tight',size:11},padding:8,
-        filter:item=>item.dataset.label!=='Upper bound'&&item.dataset.label!=='Lower bound',
-        callbacks:{label(ctx){if(ctx.raw==null)return null;const p=ctx.dataset.label==='Projected'?'(forecast) ':'';return`${p}${ctx.raw} ${m.unit}`;}}},
+        filter:item=>item.dataset.label!==t('legend_upper_bound')&&item.dataset.label!==t('legend_lower_bound'),
+        callbacks:{label(ctx){if(ctx.raw==null)return null;const p=ctx.dataset.label===t('legend_projected')?'(forecast) ':'';return`${p}${ctx.raw} ${m.unit}`;}}},
       zoneBand:{nL:m.nL,nH:m.nH},
       evtMarkers:{events},
     },
@@ -328,7 +328,7 @@ function renderCompositeAnnotated(){
     const subs=COMP_SUBGROUPS[k]||null;
     if(subs){
       subs.forEach((sub,si)=>{
-        datasets.push({label:subLabel(sub)+' (raw)',data:COMP_SUBRAW[k][sub.key],
+        datasets.push({label:subLabel(sub)+t('legend_raw_suffix'),data:COMP_SUBRAW[k][sub.key],
           borderColor:sub.color+'50',backgroundColor:'transparent',
           borderWidth:1,borderDash:[2,2],pointRadius:0,tension:.3,spanGaps:true,order:20+si});
         datasets.push({label:subLabel(sub),data:COMP_SUBAVG[k][sub.key],
@@ -346,11 +346,11 @@ function renderCompositeAnnotated(){
   });
   // Annotation events
   const annotations=[
-    {idx:3,label:'Dialysis',color:cvar('--kidney')},
-    {idx:10,label:'Transfusions begin',color:cvar('--blood')},
-    {idx:11,label:'Kidney biopsy',color:cvar('--kidney-deep')},
-    {idx:12,label:'Prednisone',color:cvar('--liver')},
-    {idx:17,label:'ALT normal 🎉',color:cvar('--z-normal')},
+    {idx:3,label:t('ann_dialysis'),color:cvar('--kidney')},
+    {idx:10,label:t('ann_transfusions'),color:cvar('--blood')},
+    {idx:11,label:t('ann_biopsy'),color:cvar('--kidney-deep')},
+    {idx:12,label:t('ann_prednisone'),color:cvar('--liver')},
+    {idx:17,label:t('ann_alt_normal'),color:cvar('--z-normal')},
   ];
   const _ccRef={current:null};
   compChart=new Chart(el,{type:'line',data:{labels:DATES,datasets},options:{
