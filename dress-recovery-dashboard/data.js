@@ -1,115 +1,115 @@
 /* ═══════════════════════════════════════════════════════════════
-   DATA  —  Apr 8 → May 3, 2026  (27 date points)
+   DATA  —  Apr 8 → May 12, 2026  (36 date points)
    ═══════════════════════════════════════════════════════════════ */
-const DATES=['Apr 8','Apr 9','Apr 10 AM','Apr 10 PM','Apr 11','Apr 12','Apr 13','Apr 14','Apr 15','Apr 16','Apr 17','Apr 18','Apr 19','Apr 20','Apr 21','Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28','Apr 29','Apr 30','May 1','May 2','May 3'];
-const DIAL_IDX=[4,6,8,10,12,14,16,18,21,23,25]; // inpatient + outpatient (Apr 28, Apr 30, May 2)
+const DATES=['Apr 8','Apr 9','Apr 10 AM','Apr 10 PM','Apr 11','Apr 12','Apr 13','Apr 14','Apr 15','Apr 16','Apr 17','Apr 18','Apr 19','Apr 20','Apr 21','Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28','Apr 29','Apr 30','May 1','May 2','May 3','May 4','May 5','May 6','May 7','May 8','May 9','May 10','May 11','May 12'];
+const DIAL_IDX=[4,6,8,10,12,14,16,18,21,23,25,28,30,32,35]; // inpatient + outpatient (Apr 28, Apr 30, May 2, May 5, May 7, May 9, May 12)
 const DISCHARGE_IDX=18; // Apr 25 — discharged home, outpatient dialysis continues
 const TX_IDX=[10,11,12,14];
 const TX_DIRECT=['HGB','RBC','HCT'];
 
 const M={
   CREAT:{name:'Creatinine',abbr:'CREAT',unit:'mg/dL',sys:'kidney',nL:0.6,nH:1.2,
-    v:[3.6,6.3,4.7,4.37,5.04,7.23,9.32,7.91,9.63,8.37,10.47,12.29,8.99,10.76,12.52,8.72,10.46,6.67,8.76,null,null,9.26,null,null,null,null,null],dir:'lower',dial:true,
+    v:[3.6,6.3,4.7,4.37,5.04,7.23,9.32,7.91,9.63,8.37,10.47,12.29,8.99,10.76,12.52,8.72,10.46,6.67,8.76,null,null,9.26,null,null,null,null,null,null,2.56,null,null,null,1.98,null,null,null,null],dir:'lower',dial:true,
     what:'A waste product from muscle activity, cleared by the kidneys.',
-    why:'The dialysis wave continues — values build before each session and clear after. Apr 28 of 9.26 is a pre-dialysis reading (session was that afternoon), which is why it is higher than Apr 25 of 8.76. The two together describe one dialysis cycle. The independent urine output trend (see UO) is the more meaningful recovery signal while dialysis continues.'},
+    why:'Creatinine has fallen from a peak of 12.52 (Apr 19) through 9.26 at the first outpatient session (Apr 28), then to 2.56 on May 5 and 1.98 on May 9. At 1.98 mg/dL — approaching the 1.30 upper edge of the normal range — the kidneys are doing significant filtration work independently. The 24-hour urine collection submitted May 12 will directly quantify that output.'},
   BUN:{name:'Blood Urea Nitrogen',abbr:'BUN',unit:'mg/dL',sys:'kidney',nL:7,nH:20,
-    v:[31,56,33,30,39,50,63,45,54,35,43,54,36,45,53,31,38,24,35,null,null,28,null,null,null,null,null],dir:'lower',dial:true,
+    v:[31,56,33,30,39,50,63,45,54,35,43,54,36,45,53,31,38,24,35,null,null,28,null,null,null,null,null,null,20,null,null,null,20,null,null,null,null],dir:'lower',dial:true,
     what:'A byproduct of protein breakdown, cleared by the kidneys.',
-    why:'Same dialysis rhythm as creatinine. Apr 28 pre-session BUN was 28; post-session BUN dropped to 11 — effective clearance. The pre-session buildup will continue until the kidneys can independently clear enough waste to reduce dialysis frequency.'},
+    why:'BUN has normalized to 20 on both May 5 and May 9 — within the 7–25 normal range. Earlier readings of 28–63 reflected pre-dialysis waste accumulation; a pre-session BUN of 20 suggests the kidneys are now clearing urea significantly between sessions. The 24-hour urine collection submitted May 12 will help quantify this directly.'},
   GFR:{name:'Filtration Rate',abbr:'GFR',unit:'mL/min',sys:'kidney',nL:60,nH:120,
-    v:[20,10,15,16,14,9,6,8,6,7,6,5,7,5,5,7,6,10,7,null,null,6.5,null,null,null,null,null],dir:'higher',dial:true,
+    v:[20,10,15,16,14,9,6,8,6,7,6,5,7,5,5,7,6,10,7,null,null,6.5,null,null,null,null,null,null,30,null,null,null,41,null,null,null,null],dir:'higher',dial:true,
     what:'The primary measure of how much the kidneys actively filter.',
-    why:'Lab GFR oscillates with the dialysis cycle and is hard to interpret in isolation while on dialysis. The Apr 28 value of 6.5 is calculated (CKD-EPI 2021, male 46y, Scr 9.26) — the lab did not report GFR on that outpatient draw. The clearer signal is independent urine output (see UO), which crossed the 2,000 mL/day normal range on May 1 and is now above 3,000 mL/day.'},
+    why:'All values are calculated (CKD-EPI 2021, male 46y) from creatinine — outpatient lab reports do not include eGFR. Apr 28: 6.5 mL/min (KDIGO G5, kidney failure). May 5: 30 (G3b, moderate-severe CKD). May 9: 41 (G3b, approaching G3a) — a dramatic three-stage improvement driven by the creatinine drop from 9.26 to 1.98. The 24-hour urine collection submitted May 12 will directly quantify independent kidney output alongside this filtration signal.'},
   BUN_CREAT:{name:'BUN / Creatinine',abbr:'BUN:Cr',unit:'ratio',sys:'kidney',nL:10,nH:20,
-    v:[null,null,null,7,8,7,7,6,6,4,4,4,4,4,4,4,4,6.67,8.76,null,null,3,null,null,null,null,null],dir:'optimal',dial:true,
+    v:[null,null,null,7,8,7,7,6,6,4,4,4,4,4,4,4,4,6.67,8.76,null,null,3,null,null,null,null,null,null,7.8,null,null,null,10.1,null,null,null,null],dir:'optimal',dial:true,
     what:'Compares two kidney waste products to characterise kidney stress.',
     why:'Low ratio (3–4) is consistent with effective dialysis urea clearance. Apr 28 of 3 reflects good BUN clearance relative to creatinine.'},
 
   AST:{name:'AST',abbr:'AST',unit:'U/L',sys:'liver',nL:10,nH:40,
-    v:[5604,5604,5604,3973,2318,901,516,279,170,119,88,68,53,47,39,31,27,23,21,null,null,27,null,null,null,null,null],dir:'lower',log:true,ceil:5604,
+    v:[5604,5604,5604,3973,2318,901,516,279,170,119,88,68,53,47,39,31,27,23,21,null,null,27,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'lower',log:true,ceil:5604,
     what:'Liver-cell enzyme released when liver cells are stressed.',
     why:'From 5,604+ to 21 at discharge and 27 on Apr 28 — both fully normal. A small uptick to 27 can reflect post-exertion muscle activity or minor fluctuation; it is well within normal range and not a concern.'},
   ALT:{name:'ALT',abbr:'ALT',unit:'U/L',sys:'liver',nL:7,nH:56,
-    v:[3273,3273,3273,3111,2389,1737,1313,873,706,573,462,362,276,229,174,155,85,19,7,null,null,null,null,null,null,null,null],dir:'lower',log:true,ceil:3273,
+    v:[3273,3273,3273,3111,2389,1737,1313,873,706,573,462,362,276,229,174,155,85,19,7,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'lower',log:true,ceil:3273,
     what:'Liver-specific enzyme that rises with hepatocellular injury.',
     why:'7 on Apr 25 — confirmed below detection threshold (<7 U/L). AST and ALT both fully normal. 🎉 Liver injury phase complete. ALT was not re-measured on Apr 28.'},
   ALKP:{name:'Alkaline Phosphatase',abbr:'ALP',unit:'U/L',sys:'liver',nL:44,nH:147,
-    v:[236,272,310,356,320,275,254,213,172,165,152,140,130,117,104,100,102,96,91,null,null,94,null,null,null,null,null],dir:'lower',
+    v:[236,272,310,356,320,275,254,213,172,165,152,140,130,117,104,100,102,96,91,null,null,94,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'lower',
     what:'Reflects bile-duct health and can rise with bone activity.',
     why:'Steady decline from 356 peak. At 91 on Apr 25 and 94 on Apr 28 — both comfortably within normal. Stable.'},
   BILT:{name:'Total Bilirubin',abbr:'BILI',unit:'mg/dL',sys:'liver',nL:0.2,nH:1.2,
-    v:[2.4,3.7,4.0,4.0,3.5,3.2,2.7,1.9,1.4,1.2,1.0,0.9,0.8,0.7,0.7,0.7,0.6,0.6,0.6,null,null,null,null,null,null,null,null],dir:'lower',
+    v:[2.4,3.7,4.0,4.0,3.5,3.2,2.7,1.9,1.4,1.2,1.0,0.9,0.8,0.7,0.7,0.7,0.6,0.6,0.6,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'lower',
     what:'Yellow pigment from old red blood cells, cleared by the liver.',
     why:'Peaked at 4.0 (jaundice level) early on. At 0.6 on Apr 25 — fully normal and holding steady.'},
   ALB:{name:'Albumin',abbr:'ALB',unit:'g/dL',sys:'liver',nL:3.5,nH:5.0,
-    v:[3.5,2.4,2.4,2.4,2.0,2.5,2.4,2.3,2.3,2.3,2.3,2.3,2.1,2.3,2.3,2.4,2.6,2.3,2.4,null,null,3.4,null,null,null,null,null],dir:'higher',
+    v:[3.5,2.4,2.4,2.4,2.0,2.5,2.4,2.3,2.3,2.3,2.3,2.3,2.1,2.3,2.3,2.4,2.6,2.3,2.4,null,null,3.4,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher',
     what:'Main liver-made protein. Carries nutrients, holds fluid in vessels.',
     why:'At 3.4 on Apr 28 — approaching the 3.5 normal floor after weeks of gradual rebuild. The pace of improvement is now visible: 2.4 at discharge (Apr 25) to 3.4 just 3 days later. Albumin has a serum half-life of ~20 days; this trajectory is ahead of schedule.'},
   TPROT:{name:'Total Protein',abbr:'T.PROT',unit:'g/dL',sys:'liver',nL:6.0,nH:8.5,
-    v:[6.5,5.2,4.9,4.9,4.4,4.5,4.5,4.6,4.7,4.8,4.9,4.9,4.7,4.7,4.4,4.9,5.1,4.8,4.9,null,null,5.5,null,null,null,null,null],dir:'higher',
+    v:[6.5,5.2,4.9,4.9,4.4,4.5,4.5,4.6,4.7,4.8,4.9,4.9,4.7,4.7,4.4,4.9,5.1,4.8,4.9,null,null,5.5,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher',
     what:'Albumin plus immune proteins. Reflects nutrition + liver synthesis.',
     why:'5.5 on Apr 28 — climbing steadily. Direction is correct; nutrition at home is supporting the rebuild.'},
 
   WBC:{name:'White Blood Cells',abbr:'WBC',unit:'K/µL',sys:'blood',nL:4.5,nH:11.0,
-    v:[0.67,0.97,1.61,1.5,1.4,2.0,3.0,5.0,5.5,6.0,6.2,8.4,7.4,7.5,7.3,5.6,8.0,6.5,7.8,null,null,7.2,null,null,null,null,null],dir:'higher',
+    v:[0.67,0.97,1.61,1.5,1.4,2.0,3.0,5.0,5.5,6.0,6.2,8.4,7.4,7.5,7.3,5.6,8.0,6.5,7.8,null,null,7.2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher',
     what:'Immune defense — fights infection.',
     why:'From 0.67 to 7.2 on Apr 28 — solidly within normal. Note: prednisone (started Apr 19) elevates WBC; readings since then are mixed signal but the trajectory is positive and the overall marrow recovery story is intact.'},
   HGB:{name:'Hemoglobin',abbr:'HGB',unit:'g/dL',sys:'blood',nL:13.5,nH:17.5,
-    v:[12.2,11.3,11.4,11.4,10.2,9.5,9.8,8.5,7.3,7.2,6.9,7.4,6.3,7.0,7.4,7.5,7.4,7.2,7.4,null,null,8.4,null,null,null,null,null],dir:'higher',tx:true,
+    v:[12.2,11.3,11.4,11.4,10.2,9.5,9.8,8.5,7.3,7.2,6.9,7.4,6.3,7.0,7.4,7.5,7.4,7.2,7.4,null,null,8.4,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher',tx:true,
     what:'Carries oxygen inside red blood cells.',
     why:'Four transfusions supported oxygen delivery while marrow rebuilt. Last transfusion Apr 21; now at 8.4 on Apr 28 — rising independently. The marrow is sustaining and improving hemoglobin without any external support. Still below normal (13.5), but the direction and independence are the key signals.'},
   PLT:{name:'Platelets',abbr:'PLT',unit:'K/µL',sys:'blood',nL:150,nH:400,
-    v:[89,73,77,82,65,65,79,112,139,187,193,233,232,210,195,205,191,161,150,null,null,174,null,null,null,null,null],dir:'higher',
+    v:[89,73,77,82,65,65,79,112,139,187,193,233,232,210,195,205,191,161,150,null,null,174,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher',
     what:'Cell fragments that enable clotting.',
     why:'From 65 to 174 on Apr 28 — solidly above the 150 normal floor. 🎉 Confirmed genuine bone marrow production; 150 at discharge was the threshold, 174 shows it is holding and climbing.'},
   RBC:{name:'Red Blood Cells',abbr:'RBC',unit:'M/µL',sys:'blood',nL:4.5,nH:5.5,
-    v:[4.0,3.62,3.69,3.74,3.34,3.07,3.22,2.83,2.39,2.37,2.29,2.46,2.07,2.37,2.54,2.49,2.51,2.43,2.45,null,null,2.78,null,null,null,null,null],dir:'higher',tx:true,
+    v:[4.0,3.62,3.69,3.74,3.34,3.07,3.22,2.83,2.39,2.37,2.29,2.46,2.07,2.37,2.54,2.49,2.51,2.43,2.45,null,null,2.78,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher',tx:true,
     what:'Oxygen-delivery vessels of the body.',
     why:'Rising from 2.45 at discharge to 2.78 on Apr 28 — marrow producing independently. Still below normal (4.5), but the climb without transfusion is the meaningful signal.'},
   HCT:{name:'Hematocrit',abbr:'HCT',unit:'%',sys:'blood',nL:41,nH:53,
-    v:[34.6,30.5,31.0,31.8,28.8,26.3,27.1,23.5,20.5,20.8,20.2,21.2,18.1,19.8,21.6,21.3,21.8,21.2,21.3,null,null,25.3,null,null,null,null,null],dir:'higher',tx:true,
+    v:[34.6,30.5,31.0,31.8,28.8,26.3,27.1,23.5,20.5,20.8,20.2,21.2,18.1,19.8,21.6,21.3,21.8,21.2,21.3,null,null,25.3,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher',tx:true,
     what:'Percentage of blood made up of red cells.',
     why:'25.3 on Apr 28 — rising from 21.3 at discharge. Mirrors hemoglobin; will build back as marrow recovery continues.'},
   RDW:{name:'Red Cell Variation',abbr:'RDW',unit:'%',sys:'blood',nL:11.5,nH:14.5,
-    v:[11.3,11.2,11.1,11.7,11.7,11.9,11.4,11.6,12.3,12.5,12.4,13.0,13.0,14.5,14.0,14.3,14.2,14.2,14.3,null,null,15.1,null,null,null,null,null],dir:'optimal',
+    v:[11.3,11.2,11.1,11.7,11.7,11.9,11.4,11.6,12.3,12.5,12.4,13.0,13.0,14.5,14.0,14.3,14.2,14.2,14.3,null,null,15.1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'optimal',
     what:'How much red cell sizes vary.',
     why:'15.1 on Apr 28 — slightly above the 14.5 normal ceiling, which is actually a positive signal here: new red cells of different sizes entering circulation from the marrow. A rising RDW in this context means the marrow is at work.'},
 
   NA:{name:'Sodium',abbr:'Na',unit:'mmol/L',sys:'electrolytes',nL:136,nH:145,
-    v:[119,115,127,132,134,132,133,137,138,136,134,131,133,127,129,131,132,135,130,null,null,134,null,null,null,null,null],dir:'optimal',
+    v:[119,115,127,132,134,132,133,137,138,136,134,131,133,127,129,131,132,135,130,null,null,134,null,null,null,null,null,null,139,null,null,null,135,null,null,null,null],dir:'optimal',
     what:'Primary electrolyte, governs cell water balance.',
-    why:'From critically low 115 at admission to 134 on Apr 28 — one step from the 136 normal floor. Sodium required active management throughout; dialysis plus careful fluid balance has brought it this far. Watching for sustained 136+.'},
+    why:'From critically low 115 at admission to 135 on May 9 — one step from the 136 normal floor. Sodium has been carefully corrected through dialysis and fluid management. Watching for sustained 136+.'},
   K:{name:'Potassium',abbr:'K',unit:'mmol/L',sys:'electrolytes',nL:3.5,nH:5.0,
-    v:[4.1,5.1,4.9,4.6,4.4,4.2,4.1,3.6,4.1,4.1,4.0,4.3,4.1,4.2,4.3,4.5,4.8,4.4,4.1,null,null,4.2,null,null,null,null,null],dir:'optimal',
+    v:[4.1,5.1,4.9,4.6,4.4,4.2,4.1,3.6,4.1,4.1,4.0,4.3,4.1,4.2,4.3,4.5,4.8,4.4,4.1,null,null,4.2,null,null,null,null,null,null,3.8,null,null,null,4.0,null,null,null,null],dir:'optimal',
     what:'Keeps the heart beating in rhythm.',
     why:'Comfortably in range at 4.2 on Apr 28. Dialysis directly regulates this.'},
   CL:{name:'Chloride',abbr:'Cl',unit:'mmol/L',sys:'electrolytes',nL:98,nH:106,
-    v:[86,80,88,96,96,92,93,98,98,96,94,94,96,92,95,98,96,98,93,null,null,95,null,null,null,null,null],dir:'optimal',
+    v:[86,80,88,96,96,92,93,98,98,96,94,94,96,92,95,98,96,98,93,null,null,95,null,null,null,null,null,null,101,null,null,null,97,null,null,null,null],dir:'optimal',
     what:'Pairs with sodium for fluid + acid-base balance.',
     why:'95 on Apr 28 — just below the lower boundary, tracking the sodium pattern. Improving.'},
   CO2:{name:'Bicarbonate',abbr:'CO₂',unit:'mmol/L',sys:'electrolytes',nL:23,nH:29,
-    v:[23,18,28,27,26,25,23,25,24,27,26,24,27,24,23,25,25,30,27,null,null,26,null,null,null,null,null],dir:'optimal',
+    v:[23,18,28,27,26,25,23,25,24,27,26,24,27,24,23,25,25,30,27,null,null,26,null,null,null,null,null,null,27,null,null,null,26,null,null,null,null],dir:'optimal',
     what:'Blood acid-base buffer.',
     why:'Holding 26–27 over recent days — comfortably in range. Effective dialysis management.'},
   ANION:{name:'Anion Gap',abbr:'AG',unit:'mmol/L',sys:'electrolytes',nL:8,nH:12,
-    v:[10,17,10.6,13.6,16.4,19.2,21.1,17.6,20.1,17.1,18.0,17.3,14.1,15.2,15.3,12.5,15.8,11.4,14.1,null,null,13,null,null,null,null,null],dir:'lower',
+    v:[10,17,10.6,13.6,16.4,19.2,21.1,17.6,20.1,17.1,18.0,17.3,14.1,15.2,15.3,12.5,15.8,11.4,14.1,null,null,13,null,null,null,null,null,null,11,null,null,null,12,null,null,null,null],dir:'lower',
     what:'Detects unusual acid accumulation.',
-    why:'13 on Apr 28 — slightly above the 12 normal ceiling, but improved from 14.1 at discharge. Pre-dialysis buildup is expected; trending in the right direction.'},
+    why:'12 on May 9 — exactly at the upper boundary of the 8–12 normal range, down from 21.1 at peak. As kidney function recovers, the acid-base balance is normalizing. One of the cleaner electrolyte recoveries of this admission.'},
   GLU:{name:'Glucose',abbr:'GLU',unit:'mg/dL',sys:'electrolytes',nL:70,nH:100,
-    v:[101,133,112,127,181,116,108,104,108,90,91,87,91,94,85,122,109,87,82,null,null,null,null,null,null,null,null],dir:'optimal',
+    v:[101,133,112,127,181,116,108,104,108,90,91,87,91,94,85,122,109,87,82,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'optimal',
     what:'Blood sugar — primary cell fuel.',
     why:'82 on Apr 25 — within normal. Not measured on Apr 28 outpatient draw.'},
   CA:{name:'Calcium',abbr:'Ca',unit:'mg/dL',sys:'electrolytes',nL:8.5,nH:10.5,
-    v:[7.9,6.6,7.2,7.3,6.6,6.9,6.8,7.2,7.0,7.3,7.1,7.2,7.2,7.2,7.2,7.7,7.9,7.6,8.0,null,null,8.4,null,null,null,null,null],dir:'optimal',
+    v:[7.9,6.6,7.2,7.3,6.6,6.9,6.8,7.2,7.0,7.3,7.1,7.2,7.2,7.2,7.2,7.7,7.9,7.6,8.0,null,null,8.4,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'optimal',
     what:'Bone, nerve, and muscle (incl. heart).',
     why:'8.4 on Apr 28 — very close to the 8.5 normal floor. Consistent improvement from 8.0 at discharge. Calcium supplementation is part of the outpatient plan alongside phosphorus management.'},
 };
 
 const SYSTEMS={
   kidney:{name:'Kidneys',color:'kidney',markers:['UO','GFR','BUN','CREAT','BUN_CREAT'],
-    desc:'The kidneys act as the body\'s filtration plant — removing waste, regulating minerals, and controlling fluid balance. When they need support, dialysis steps in. KA\'s kidneys are on outpatient dialysis while continuing to recover independently. The D markers in each chart show dialysis session days — the wave pattern you see in these charts is expected and correct.',
-    hl:'Urine output 3,205 mL May 3 — well above 2,000 mL/day normal',
-    status:'On outpatient dialysis · kidney output strongly returning'},
+    desc:'The kidneys act as the body\'s filtration plant — removing waste, regulating minerals, and controlling fluid balance. When they need support, dialysis steps in. KA\'s kidneys are on outpatient dialysis and recovering rapidly: creatinine fell from a peak of 12.52 to 1.98 by May 9, and BUN is now within the normal range. The D markers in each chart show dialysis session days.',
+    hl:'Creatinine 1.98 on May 9 — down from 9.26 on Apr 28 · 7 sessions complete',
+    status:'Outpatient dialysis ongoing · kidneys recovering strongly'},
   liver:{name:'Liver',color:'liver',markers:['AST','ALT','ALKP','BILT','ALB','TPROT'],
     desc:'The liver has two distinct recovery phases. The first — the <strong>injury phase</strong> — is complete: AST, ALT, and bilirubin are all fully normal. The second — <strong>protein synthesis rebuilding</strong> — is accelerating: albumin jumped from 2.4 at discharge to 3.4 on Apr 28, nearly reaching the 3.5 normal floor in just three days. Total protein is also climbing steadily.',
     hl:'Albumin 3.4 on Apr 28 — approaching 3.5 normal floor',
@@ -119,20 +119,23 @@ const SYSTEMS={
     hl:'Platelets 174 · HGB 8.4 on Apr 28 — both rising without transfusion',
     status:'Bone marrow actively rebuilding'},
   electrolytes:{name:'Electrolytes',color:'elec',markers:['NA','K','CL','CO2','ANION','GLU','CA'],
-    desc:'Electrolytes control nerve signaling, muscle contraction, fluid balance, and the body\'s acid-base chemistry. They were significantly disrupted at admission and have been carefully guided back toward balance. Sodium and calcium are both approaching their normal floors. Most others are stable and in range.',
-    hl:'Sodium 134 — near 136 normal floor · Calcium 8.4, near 8.5 normal',
+    desc:'Electrolytes control nerve signaling, muscle contraction, fluid balance, and the body\'s acid-base chemistry. They were significantly disrupted at admission and have been carefully guided back toward balance. Sodium is one step from the normal floor; anion gap and CO2 are fully in range; potassium and chloride are stable.',
+    hl:'Sodium 135 — one step from 136 normal floor · Anion gap 12, at normal ceiling',
     status:'Most levels stabilising well'},
 };
 
 // UO — first independent kidney signal; returned Apr 25, now well above normal range
 M.UO={name:'Urine Output',abbr:'UO',unit:'mL/day',sys:'kidney',nL:800,nH:2000,
-  v:[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,445,605,895,1055,1490,1995,2140,3330,3205],dir:'higher',
+  v:[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,445,605,895,1055,1490,1995,2140,3330,3205,3150,3810,2310,3000,1800,2815,1595,2850,null,null],dir:'higher',
   what:'Volume of urine produced per day — the most direct sign that the kidneys are doing their own work.',
-  why:'After 17 days of zero independent output, urine returned on Apr 25 (445 mL) and has risen every day since. By May 1 it crossed the 2,000 mL/day normal floor, and by May 3 it reached 3,205 mL — well into the normal range and continuing. The stacked bar chart below shows each individual void event. This is the clearest signal of returning kidney function, distinct from lab values which dialysis muddies.'};
+  why:'After 17 days of zero independent output, urine returned on Apr 25 (445 mL) and rose steadily. By May 1 it crossed the 2,000 mL/day normal floor, and by May 5 it peaked at 3,810 mL. From May 4–11, output held consistently in the 1,595–3,810 mL/day range — every reading above the 1,500 mL healthy threshold. This is the clearest self-tracked signal of returning kidney function, distinct from lab values which dialysis muddies.'};
+
+// Trim all marker arrays to DATES length so adding dates never leaves orphan nulls
+Object.values(M).forEach(m=>{if(m.v)m.v.length=DATES.length;});
 
 // Individual void events for stacked-bar chart (51 events, Apr 25–May 3)
 // Each entry: [dayIndex (0=Apr 25 … 8=May 3), timeHHMM, volumeMl]
-const UO_EVENT_LABELS=['Apr 25','Apr 26','Apr 27','Apr 28','Apr 29','Apr 30','May 1','May 2','May 3'];
+const UO_EVENT_LABELS=['Apr 25','Apr 26','Apr 27','Apr 28','Apr 29','Apr 30','May 1','May 2','May 3','May 4','May 5','May 6','May 7','May 8','May 9','May 10','May 11'];
 const UO_EVENTS=[
   [0,'21:30',445],
   [1,'08:40',240],[1,'18:37',240],[1,'22:11',125],
@@ -143,6 +146,14 @@ const UO_EVENTS=[
   [6,'02:56',550],[6,'08:18',520],[6,'12:45',280],[6,'15:11',240],[6,'17:30',200],[6,'19:14',200],[6,'21:38',150],
   [7,'02:29',750],[7,'07:14',680],[7,'09:08',250],[7,'11:19',120],[7,'13:39',350],[7,'16:51',790],[7,'21:17',300],[7,'22:07',90],
   [8,'01:56',800],[8,'04:26',430],[8,'07:30',575],[8,'09:50',400],[8,'14:37',575],[8,'21:00',200],[8,'22:08',225],
+  [9,'01:53',875],[9,'04:39',675],[9,'06:53',450],[9,'08:42',150],[9,'09:25',100],[9,'15:52',350],[9,'18:41',200],[9,'22:05',275],[9,'22:52',75],
+  [10,'00:49',630],[10,'03:32',120],[10,'05:50',825],[10,'08:40',693],[10,'13:45',512],[10,'18:45',880],[10,'21:27',80],[10,'22:47',20],[10,'23:32',50],
+  [11,'02:00',700],[11,'06:56',775],[11,'10:32',225],[11,'14:15',260],[11,'19:21',300],[11,'20:36',50],
+  [12,'00:25',690],[12,'05:47',690],[12,'08:36',425],[12,'13:30',175],[12,'18:45',940],[12,'21:39',80],
+  [13,'05:59',925],[13,'10:16',425],[13,'17:06',225],[13,'23:01',225],
+  [14,'03:06',950],[14,'07:02',525],[14,'10:07',250],[14,'13:21',290],[14,'18:37',700],[14,'20:24',50],[14,'23:10',50],
+  [15,'03:49',625],[15,'08:42',620],[15,'16:07',150],[15,'22:39',200],
+  [16,'03:37',825],[16,'07:11',625],[16,'10:54',400],[16,'14:03',590],[16,'21:38',410],
 ];
 
 const TIMELINE=[
@@ -168,4 +179,8 @@ const TIMELINE=[
   {d:'May 1', tags:['kidney','milestone'],t:'🎉 Urine output 2,140 mL — first day crossing the 2,000 mL/day normal range. Weight 73.6 kg. Blood pressure 127/79 mmHg.'},
   {d:'May 2', tags:['kidney','procedure'],t:'Third outpatient dialysis. ~2.5 hrs, 0.7 L net removed. Pre ~74.0 kg, post ~72.8 kg. Last standing BP 160/61. Urine output 3,330 mL.'},
   {d:'May 3', tags:['kidney','milestone'],t:'Urine output 3,205 mL — sustained above 3,000 mL/day. Blood pressure 124/75 mmHg. Independent kidney recovery clearly underway.'},
+  {d:'May 5', tags:['kidney','procedure'],t:'Fourth outpatient dialysis (Treatment #4) at Ascend Clinical. Creatinine 2.56 — down from 9.26 on Apr 28. BUN 20, within normal range. Kidney recovery accelerating.'},
+  {d:'May 7', tags:['kidney','procedure'],t:'Fifth outpatient dialysis (Treatment #5) at Ascend Clinical.'},
+  {d:'May 9', tags:['kidney','milestone'],t:'🎉 Sixth outpatient dialysis (Treatment #6). Creatinine 1.98 — down from a peak of 12.52. BUN 20. Kidneys approaching near-normal waste clearance independently.'},
+  {d:'May 12',tags:['kidney','procedure'],t:'Seventh outpatient dialysis (Treatment #7) at Ascend Clinical. 24-hour urine collection submitted — results pending, will directly quantify independent kidney output.'},
 ];

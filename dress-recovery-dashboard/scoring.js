@@ -25,7 +25,7 @@ const COMP_MARKERS={
   BUN_CREAT:{sys:'_chart', dir:'optimal', nL:10, nH:20, wL:5, wH:30, cL:2, cH:40, wstL:0, wstH:60},
   RBC:  {sys:'_chart', dir:'higher',  best:4.5,  warn:3.0,   crit:2.0,   worst:1.0},
   HCT:  {sys:'_chart', dir:'higher',  best:41,   warn:25,    crit:18,    worst:12},
-  UO:   {sys:'_chart', dir:'higher',  best:1500, warn:400,   crit:100,   worst:0},
+  UO:   {sys:'kidney', dir:'higher',  best:1500, warn:400,   crit:100,   worst:0},
 };
 
 function cNorm(key,val){
@@ -79,8 +79,9 @@ function cRolling(arr,w=3){
 function cSysComposite(sysKey){
   const mkrs=Object.keys(COMP_MARKERS).filter(k=>COMP_MARKERS[k].sys===sysKey);
   return DATES.map((_,i)=>{
-    const sc=mkrs.map(k=>cNorm(k,M[k]?M[k].v[i]:null)).filter(s=>s!==null);
-    return sc.length?+(sc.reduce((a,b)=>a+b,0)/sc.length).toFixed(1):null;
+    const sc=mkrs.map(k=>cNorm(k,M[k]?M[k].v[i]:null));
+    if(sc.some(s=>s===null))return null;
+    return +(sc.reduce((a,b)=>a+b,0)/sc.length).toFixed(1);
   });
 }
 

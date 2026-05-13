@@ -68,6 +68,15 @@ function lastKnown(arr){
   for(let i=arr.length-1;i>=0;i--){if(arr[i]!=null)return arr[i];}
   return null;
 }
+function lastKnownIdx(arr){
+  for(let i=arr.length-1;i>=0;i--){if(arr[i]!=null)return i;}
+  return -1;
+}
+function daysAgo(dateStr){
+  const d=new Date(dateStr.replace(/ (AM|PM)$/,'')+', 2026');
+  const now=new Date(); now.setHours(0,0,0,0); d.setHours(0,0,0,0);
+  return Math.round((now-d)/864e5);
+}
 
 /* Status helpers */
 function vstatus(v,m){if(v==null||isNaN(v))return'unk';if(v>=m.nL&&v<=m.nH)return'ok';return v>m.nH?'hi':'lo';}
@@ -259,6 +268,10 @@ function ringCard(sysKey){
   const delta=(currRaw!=null&&prevRaw!=null)?currRaw-prevRaw:0;
   const sign=delta>.5?'↑':delta<-.5?'↓':'→';
   const dCls=delta>.5?'up':delta<-.5?'dn':'flat';
+  const lastIdx=lastKnownIdx(avg);
+  const _n=lastIdx>=0?daysAgo(DATES[lastIdx]):null;
+  const asOf=_n!=null&&_n>0?` (${_n}d ago)`:``;
+
   const score=curr!=null?Math.round(curr):0;
   const C=2*Math.PI*30;
   const dash=(score/100)*C;
@@ -296,7 +309,7 @@ function ringCard(sysKey){
       </div>
       <div class="ring-info">
         <div class="ring-status">${s.status}</div>
-        <div class="ring-delta ${dCls}">${sign} ${Math.abs(delta).toFixed(1)} <span style="opacity:.7">${t('gp_from_prev')}</span></div>
+        <div class="ring-delta flat"><span style="opacity:.7">${_n!=null&&_n>0?'as of '+_n+'d ago':_n===0?'current':''}</span></div>
       </div>
     </div>
     <div class="ring-spark"><canvas id="${sparkId}"></canvas></div>
@@ -350,8 +363,8 @@ function renderCompositeAnnotated(){
     },
     scales:{
       x:{ticks:{color:t3,font:{size:9,family:'JetBrains Mono'},maxRotation:40,autoSkip:true,maxTicksLimit:10},grid:{color:lineSoft+'60'},border:{display:false}},
-      y:{min:0,max:100,
-        ticks:{color:t3,font:{size:9,family:'JetBrains Mono'},maxTicksLimit:5,callback:v=>v===100?'Normal':v===0?'Critical':v},
+      y:{min:0,max:110,
+        ticks:{color:t3,font:{size:9,family:'JetBrains Mono'},maxTicksLimit:6,callback:v=>v===100?['Normal','100']:v===0?'Critical':v>100?null:v},
         grid:{color:lineSoft+'60'},border:{display:false}},
     },
   },plugins:[{

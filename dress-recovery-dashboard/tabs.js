@@ -4,7 +4,7 @@ function renderOverview(){
     const tags=it.tags.map(tag=>`<span class="tl-tag ${tag}">${tag}</span>`).join('');
     const isToday=idx===TIMELINE.length-1;
     return `<div class="tl-row${isToday?' today':''}">
-      <div class="tl-date">${it.d}${isToday?'<small>today</small>':''}</div>
+      <div class="tl-date">${it.d}</div>
       <div class="tl-body"><span class="tl-tags">${tags}</span>${t('tl_'+(idx+1)) || it.t}</div>
     </div>`;
   }).join('');
@@ -40,7 +40,7 @@ function renderOverview(){
       </div>
     </div>
 
-    <div class="sec"><h3>${t('sec_systems')}</h3><div class="sec-line"></div><span class="sec-sub">click a card</span></div>
+    <div class="sec"><h3>${t('sec_systems')} <em style="font-style:italic;color:var(--t2)">· since last reading</em></h3><div class="sec-line"></div><span class="sec-sub">click to explore</span></div>
     <div class="sys-grid">${sysCards}</div>
 
     <div class="composite-card">
@@ -173,7 +173,7 @@ function renderHeatmap(){
       const lblCell=`<div class="heat-row-lbl">${tM(mKey,'name')} <span class="abbr">${m.abbr}</span></div>`;
       const cells=DATES.map((d,i)=>{
         const v=m.v[i];
-        if(v==null)return `<div class="heat-cell empty"></div>`;
+        if(v==null){let sc='';for(let j=i-1;j>=0;j--){if(m.v[j]!=null){sc=zoneHex(zoneOf(cNorm(mKey,m.v[j])));break;}}return '<div class="heat-cell empty"'+(sc?' style="--stripe-color:'+sc+'"':'')+'></div>';}
         const score=cNorm(mKey,v);
         const zone=zoneOf(score);
         const bg=zoneHex(zone);
@@ -200,7 +200,7 @@ function renderHeatmap(){
         <div class="heat-leg"><span class="heat-leg-dot" style="background:var(--z-warn)"></span>Warning (60–84)</div>
         <div class="heat-leg"><span class="heat-leg-dot" style="background:var(--z-danger)"></span>Danger (30–59)</div>
         <div class="heat-leg"><span class="heat-leg-dot" style="background:var(--z-critical)"></span>Critical (0–29)</div>
-        <div class="heat-leg" style="margin-left:auto;color:var(--t3)"><span class="heat-leg-dot" style="background:repeating-linear-gradient(45deg,var(--line-soft) 0 3px,transparent 3px 6px);opacity:.5"></span>No reading</div>
+        <div class="heat-leg" style="margin-left:auto;color:var(--t3)"><span class="heat-leg-dot" style="background:linear-gradient(transparent 37.5%,var(--t3) 37.5%,var(--t3) 62.5%,transparent 62.5%),repeating-linear-gradient(45deg,var(--t3) 0 2px,transparent 2px 5px);opacity:.4"></span>No reading</div>
       </div>
     </div>
   `;
@@ -374,10 +374,12 @@ function renderGraphs(){
     const delta=currRaw!=null&&prevRaw!=null?currRaw-prevRaw:0;
     const sign=delta>.5?'↑':delta<-.5?'↓':'→';
     const dc=delta>.5?'color:var(--z-normal)':delta<-.5?'color:var(--z-danger)':'color:var(--t3)';
+    const _li=lastKnownIdx(avg),_nd=_li>=0?daysAgo(DATES[_li]):null;
+    const _ago=_nd!=null&&_nd>0?' ('+_nd+'d ago)':'';
     return `<div class="gp-card" id="gp-card-${k}" style="--gp-ac:${hex}" onclick="document.getElementById('gp-sec-${k}').scrollIntoView({behavior:'smooth',block:'start'})">
       <div class="gp-sys" style="color:${hex}">${tSys(k,'name')}</div>
       <div class="gp-scr" style="color:${hex}">${curr!=null?Math.round(curr):'—'}<span style="font-size:.9rem;font-weight:400;color:var(--t3)">/100</span></div>
-      <div class="gp-sub" style="${dc}">${sign} ${Math.abs(delta).toFixed(1)} ${t('gp_from_prev')}</div>
+      <div class="gp-sub" style="${dc}">${sign} ${Math.abs(delta).toFixed(1)} ${t('gp_from_prev')}${_ago}</div>
       <div class="gp-bar"><div class="gp-fill" style="width:${curr??0}%;background:${hex}33;border-right:2px solid ${hex}"></div></div>
     </div>`;
   }).join('');
@@ -527,8 +529,8 @@ function renderGraphs(){
           plugins:{legend:{display:false},tooltip:mkTooltip(_ref)},
           scales:{
             x:{grid:{color:lineSoft+'60'},ticks:{color:t3c,font:{size:9,family:'JetBrains Mono'},maxRotation:40,autoSkip:true,maxTicksLimit:10},border:{display:false}},
-            y:{min:0,max:100,grid:{color:lineSoft+'60'},
-               ticks:{color:t3c,font:{size:9,family:'JetBrains Mono'},maxTicksLimit:4,callback:v=>v===100?'Normal':v},
+            y:{min:0,max:110,grid:{color:lineSoft+'60'},
+               ticks:{color:t3c,font:{size:9,family:'JetBrains Mono'},maxTicksLimit:6,callback:v=>v===100?['Normal','100']:v===0?'Critical':v>100?null:v},
                border:{display:false}},
           },
         },
