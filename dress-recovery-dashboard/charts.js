@@ -101,6 +101,7 @@ function projOf(mKey,m){
   if(m.tx||isTxDriven(mKey))return{type:'tx',text:t('proj_tx')};
   const clean=m.v.filter(v=>v!==null);
   const cur=clean[clean.length-1];
+  if(m.noProj)return cur>=m.nL?{type:'imp',text:t('proj_norm')}:{type:'watch',text:t('proj_watch')};
   if(cur>=m.nL&&cur<=m.nH)return{type:'imp',text:t('proj_norm')};
   const n=Math.min(6,clean.length);
   const{slope,intercept}=lr(clean.slice(-n));
