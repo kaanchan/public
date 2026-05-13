@@ -125,6 +125,16 @@ const LANGS = {
       gp_uo_events_sub:   'Each bar segment = one void event · 17 days · 101 events total',
       gp_uo_normal_line:  '2,000 mL/day normal floor',
       gp_uo_daily_total:  'Daily total',
+      h_as_of_pre:        'as of ',
+      h_d_ago:            'd ago',
+      h_current:          'current',
+      hm_eyebrow:         'HEATMAP CALENDAR · 36 DAYS · 23 MARKERS',
+      hm_title:           'Every reading, color-coded by health zone',
+      hm_intro:           'Each cell is one lab reading. Color shows which clinical zone the value sits in — green for normal, yellow for warning, orange for danger, red for critical. Hover any cell to see the exact value and date.',
+      h_palette:          'Palette',
+      h_view:             'View',
+      h_density:          'Density',
+      h_audience:         'Audience',
     }
   },
   ne: {
@@ -332,8 +342,18 @@ const LANGS = {
       m_CA_why:'बिस्तारै उकालो सकारात्मक संकेत।',
       gp_uo_events_title:'मूत्र उत्पादन · व्यक्तिगत घटनाहरू', 
       gp_uo_events_sub:'प्रत्येक बार खण्ड = एक पटकको मूत्र विसर्जन · १७ दिन · जम्मा १०१ घटना', 
-      gp_uo_normal_line:'२,००० mL/दिन — सामान्य न्यून सीमा', 
-      gp_uo_daily_total:'दैनिक कुल', 
+      gp_uo_normal_line:'२,००० mL/दिन — सामान्य न्यून सीमा',
+      gp_uo_daily_total:'दैनिक कुल',
+      h_as_of_pre:      '',
+      h_d_ago:          ' दिन अघि',
+      h_current:        'हालको',
+      hm_eyebrow:       'ताप नक्सा पात्रो · ३६ दिन · २३ मार्कर',
+      hm_title:         'प्रत्येक परीक्षण, स्वास्थ्य क्षेत्र अनुसार रंग-कोड गरिएको',
+      hm_intro:         'प्रत्येक खाना एउटा ल्याब परीक्षण हो। रंगले स्वास्थ्य क्षेत्र देखाउँछ — हरियो सामान्य, पहेँलो सतर्क, सुन्तलो खतरा, रातो संकट। सही मान र मिति हेर्न कुनै पनि खानामा होभर गर्नुहोस्।',
+      h_palette:        'रंग',
+      h_view:           'दृश्य',
+      h_density:        'घनत्व',
+      h_audience:       'दर्शक',
     }
   }
 };

@@ -308,8 +308,8 @@ function ringCard(sysKey){
         </div>
       </div>
       <div class="ring-info">
-        <div class="ring-status">${s.status}</div>
-        <div class="ring-delta flat"><span style="opacity:.7">${_n!=null&&_n>0?'as of '+_n+'d ago':_n===0?'current':''}</span></div>
+        <div class="ring-status">${tSys(sysKey,'status')}</div>
+        <div class="ring-delta flat"><span style="opacity:.7">${_n!=null&&_n>0?t('h_as_of_pre')+_n+t('h_d_ago'):_n===0?t('h_current'):''}</span></div>
       </div>
     </div>
     <div class="ring-spark"><canvas id="${sparkId}"></canvas></div>

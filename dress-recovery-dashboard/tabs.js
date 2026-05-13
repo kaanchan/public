@@ -188,9 +188,9 @@ function renderHeatmap(){
   const dateHeader='<div class="heat-row-lbl"></div>'+DATES.map(d=>`<div class="heat-date">${d.replace('Apr ','')}</div>`).join('');
   el.innerHTML=`
     <div class="hero" style="margin-bottom:var(--gap)">
-      <div class="hero-eyebrow">HEATMAP CALENDAR · 26 DAYS · 23 MARKERS</div>
-      <h2>Every reading, color-coded by health zone</h2>
-      <p>Each cell is one lab reading. Color shows which clinical zone the value sits in — green for normal, yellow for warning, orange for danger, red for critical. Hover any cell to see the exact value and date.</p>
+      <div class="hero-eyebrow">${t('hm_eyebrow')}</div>
+      <h2>${t('hm_title')}</h2>
+      <p>${t('hm_intro')}</p>
     </div>
     <div class="heat-card">
       <div class="heat-grid" style="grid-template-columns:120px repeat(${DATES.length},minmax(20px,1fr))">${dateHeader}${sections}</div>
