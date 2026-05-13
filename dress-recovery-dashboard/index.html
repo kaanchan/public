@@ -568,7 +568,7 @@ body.full{padding:0}
         </div>
         <span class="h-badge" id="header-badge" data-i18n="h_updated"></span>
       </div>
-      <h1 class="h-title"><span id="header-title-pre"></span><em id="header-title-em">Recovery Dashboard</em></h1>
+      <h1 class="h-title"><span id="header-title-pre" data-i18n="h_title_pre"></span><em id="header-title-em" data-i18n="h_title_em">Recovery Dashboard</em></h1>
       <div class="h-sub" id="header-sub" data-i18n="h_sub"></div>
     </div>
     <div class="toolbar">
@@ -690,7 +690,6 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   // Wire header from CONFIG
   document.getElementById('header-badge').textContent = CONFIG.header.badge;
-  document.getElementById('header-title-pre').textContent = CONFIG.patient.name + ' – ';
   document.getElementById('header-sub').textContent = CONFIG.header.subtitle;
 
   // Apply defaults from CONFIG (keeps config.js as single source of truth for initial state)

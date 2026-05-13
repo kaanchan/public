@@ -505,13 +505,15 @@ function renderGraphs(){
         GP_SYS_MARKERS[sysKey].forEach(key=>{
           const col=gpMColor(key,sysKey);
           const series=gpMarkerSeries(key);
-          const avg=cRolling(series);
-          if(incRaw) ds.push({label:GP_MARKER_META[key].label+' (raw)',data:series,
+          const avg=key==='UO'?series:cRolling(series);
+          if(incRaw&&key!=='UO') ds.push({label:GP_MARKER_META[key].label+t('legend_raw_suffix'),data:series,
             borderColor:col+'45',backgroundColor:'transparent',
-            borderWidth:1,borderDash:[2,2],pointRadius:0,tension:.25,spanGaps:true});
+            borderWidth:1,borderDash:[2,2],pointRadius:0,tension:.25,spanGaps:true,
+            segment:{borderColor:ctx=>ctx.p1DataIndex-ctx.p0DataIndex>1&&ctx.p0DataIndex<DISCHARGE_IDX?'transparent':undefined}});
           ds.push({label:GP_MARKER_META[key].label,data:avg,borderColor:col,backgroundColor:'transparent',
             borderWidth:1.5,borderDash:[5,3],pointRadius:2,pointBackgroundColor:col,
-            pointHoverRadius:5,tension:.3,spanGaps:true});
+            pointHoverRadius:5,tension:.3,spanGaps:true,
+            segment:{borderColor:ctx=>ctx.p1DataIndex-ctx.p0DataIndex>1?(ctx.p0DataIndex>=DISCHARGE_IDX?col+'55':'transparent'):undefined}});
         });
         return ds;
       }

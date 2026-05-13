@@ -125,7 +125,7 @@ const SYSTEMS={
 };
 
 // UO — first independent kidney signal; returned Apr 25, now well above normal range
-M.UO={name:'Urine Output',abbr:'UO',unit:'mL/day',sys:'kidney',nL:800,nH:2000,
+M.UO={name:'Urine Output',abbr:'UO',unit:'mL/day',sys:'kidney',nL:800,nH:2000,noProj:true,
   v:[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,445,605,895,1055,1490,1995,2140,3330,3205,3150,3810,2310,3000,1800,2815,1595,2850,null,null],dir:'higher',
   what:'Volume of urine produced per day — the most direct sign that the kidneys are doing their own work.',
   why:'After 17 days of zero independent output, urine returned on Apr 25 (445 mL) and rose steadily. By May 1 it crossed the 2,000 mL/day normal floor, and by May 5 it peaked at 3,810 mL. From May 4–11, output held consistently in the 1,595–3,810 mL/day range — every reading above the 1,500 mL healthy threshold. This is the clearest self-tracked signal of returning kidney function, distinct from lab values which dialysis muddies.'};

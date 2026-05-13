@@ -153,7 +153,7 @@ Chart.register({id:'evtMarkers',afterDraw(chart){
 }});
 
 function projLine(mKey,m){
-  if(m.dial||m.tx||isTxDriven(mKey))return{pl:[],pd:[]};
+  if(m.dial||m.tx||m.noProj||isTxDriven(mKey))return{pl:[],pd:[]};
   const clean=m.v.filter(v=>v!==null);
   const cur=clean[clean.length-1];
   if(cur>=m.nL&&cur<=m.nH)return{pl:[],pd:[]};
@@ -197,6 +197,10 @@ function mkChart(id,mKey){
   if(m.dial)DIAL_IDX.forEach(i=>events.push({idx:i,label:'D',color:cvar('--kidney')}));
   if(m.tx||isTxDriven(mKey))TX_IDX.forEach(i=>events.push({idx:i,label:'T',color:cvar('--blood')}));
 
+  // Gap bridge — faint dashed line spanning post-discharge null gaps (separate dataset
+  // because Chart.js 4.4.1 silently ignores borderDash inside segment callbacks)
+  const gapBridgeData=main.map((v,i)=>i>=DISCHARGE_IDX?v:null);
+  const hasPostGap=gapBridgeData.some((v,i)=>v===null&&i>=DISCHARGE_IDX&&i<main.length-1);
   const datasets=[{
     label:m.name,data:main,
     borderColor:sysHexC,backgroundColor:'transparent',
@@ -206,6 +210,12 @@ function mkChart(id,mKey){
     pointBorderColor:sysHexC,pointBorderWidth:2,
     fill:{target:'origin',above:sysSoftHexC+'00',below:sysSoftHexC+'33'},
   }];
+  if(hasPostGap)datasets.push({
+    label:'',data:gapBridgeData,
+    borderColor:sysHexC+'55',backgroundColor:'transparent',
+    borderWidth:1,borderDash:[4,4],tension:0,spanGaps:true,
+    pointRadius:0,pointHitRadius:0,order:10,
+  });
   if(pd.length>0){
     // Forecast cone — upper/lower bands
     const slope=Math.abs(pd.length>1?(pd[pd.length-1]-pd[0])/pd.length:0)||0.1;
@@ -239,7 +249,7 @@ function mkChart(id,mKey){
       tooltip:{
         backgroundColor:cvar('--ink'),titleColor:cvar('--card'),bodyColor:cvar('--card'),
         titleFont:{family:'Inter Tight',size:11,weight:'600'},bodyFont:{family:'Inter Tight',size:11},padding:8,
-        filter:item=>item.dataset.label!==t('legend_upper_bound')&&item.dataset.label!==t('legend_lower_bound'),
+        filter:item=>item.dataset.label!==t('legend_upper_bound')&&item.dataset.label!==t('legend_lower_bound')&&item.dataset.label!=='',
         callbacks:{label(ctx){if(ctx.raw==null)return null;const p=ctx.dataset.label===t('legend_projected')?'(forecast) ':'';return`${p}${ctx.raw} ${m.unit}`;}}},
       zoneBand:{nL:m.nL,nH:m.nH},
       evtMarkers:{events},

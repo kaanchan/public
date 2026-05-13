@@ -101,8 +101,8 @@ const LANGS = {
       dress_toc_5:    'Recovery & Outlook',
       dress_toc_qa:   'Questions & Answers',
       page_title:     'KA · Recovery Dashboard',
-      h_title_em:     'KA',
-      h_title_rest:   '— Recovery Dashboard',
+      h_title_pre:    'KA – ',
+      h_title_em:     'Recovery Dashboard',
       proj_dial:      'Following the expected dialysis rhythm — values build before each session and clear after.',
       proj_tx:        'Transfusion-supported. We are watching for hemoglobin holding or rising between transfusions — a sign of independent marrow output.',
       proj_norm:      'Currently within the normal range — a positive milestone reached.',
@@ -159,8 +159,8 @@ const LANGS = {
   ne: {
     name:'नेपाली', label:'नेपाली', dir:'ltr',
     strings:{
-      h_title_em:'का',
-      h_title_rest:'— पुनर्प्राप्ति ड्यासबोर्ड',
+      h_title_pre:'का – ',
+      h_title_em:'पुनर्प्राप्ति ड्यासबोर्ड',
       h_sub:'ल्याब नतिजा · अप्रिल ८ देखि मे १२, २०२६ · डिस्चार्ज अप्रिल २५ · बाह्य विभाग',
       h_updated:'अद्यावधिक मे १२',
       tab_overview:'सारांश',
