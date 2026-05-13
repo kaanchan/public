@@ -23,7 +23,7 @@ function renderOverview(){
     <div class="notice">${t('disclaimer')}</div>
 
     <div class="hero">
-      <div class="hero-eyebrow">RECOVERY · DAY 26 · HOME</div>
+      <div class="hero-eyebrow">${t('h_phase')}</div>
       <h2>${t('story_title')}</h2>
       <p>${t('story_p1')}</p>
       <p>${t('story_p2')}</p>
