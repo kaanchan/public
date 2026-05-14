@@ -1,8 +1,17 @@
 /* ═══════════════════════════════════════════════════════════
-   i18n — English + Nepali strings
-   Usage: t('key') → string in current language
-          tM('CREAT','name') → marker name in current lang
-          tSys('kidney','label') → system label in current lang
+   i18n — single source of truth for ALL display strings.
+   NO string may appear independently in index.html, tabs.js,
+   charts.js, or data.js. Every visible string must live here.
+
+   Usage: t('key')              → general string, current lang
+          tM('CREAT','name')    → marker field, current lang
+          tSys('kidney','name') → system field, current lang
+          tDress('key')         → DRESS-tab long-form content
+
+   Missing key behaviour:
+     t()    → warns + returns the bare key (visible in UI)
+     tM()   → warns + returns '' (blank field)
+     tSys() → warns + returns '' (blank field)
    ═══════════════════════════════════════════════════════════ */
 
 const LANGS = {
@@ -119,8 +128,97 @@ const LANGS = {
       ceil_note_pre:  'About these early readings:',
       ceil_note_body: 'The first values all show {VAL} U/L — the highest number the lab equipment could display. The actual levels were at least this high, likely higher. The machine reached its ceiling. Every single drop since then is real and confirmed.',
       m_UO_name: 'Urine Output',
-      m_UO_what: 'The total volume of urine produced in 24 hours. Any urine output in a dialysis patient means the kidneys are filtering independently.',
-      m_UO_why:  'After 17 days of zero output, urine returned on Apr 25 (445 mL) and rose steadily — crossing 800 mL/day on Apr 27, crossing 2,000 mL on May 1, and peaking at 3,810 mL on May 5. From May 4–11, output held consistently in the 1,595–3,810 mL/day range — every reading above the 1,500 mL healthy threshold. The daily totals line shows the arc; the stacked bar chart shows each individual void event (Apr 25–May 3).',
+      m_UO_what: 'Volume of urine produced per day — the most direct sign that the kidneys are doing their own work.',
+      m_UO_why:  'After 17 days of zero independent output, urine returned on Apr 25 (445 mL) and rose steadily. By May 1 it crossed the 2,000 mL/day normal floor, and by May 5 it peaked at 3,810 mL. From May 4–11, output held consistently in the 1,595–3,810 mL/day range — every reading above the 1,500 mL healthy threshold. This is the clearest self-tracked signal of returning kidney function, distinct from lab values which dialysis muddies.',
+      m_CREAT_name: 'Creatinine',
+      m_CREAT_what: 'A waste product from muscle activity, cleared by the kidneys.',
+      m_CREAT_why:  'Creatinine has fallen from a peak of 12.52 (Apr 19) through 9.26 at the first outpatient session (Apr 28), then to 2.56 on May 5 and 1.98 on May 9. At 1.98 mg/dL — approaching the 1.30 upper edge of the normal range — the kidneys are doing significant filtration work independently. The 24-hour urine collection submitted May 12 will directly quantify that output.',
+      m_BUN_name: 'Blood Urea Nitrogen',
+      m_BUN_what: 'A byproduct of protein breakdown, cleared by the kidneys.',
+      m_BUN_why:  'BUN has normalized to 20 on both May 5 and May 9 — within the 7–25 normal range. Earlier readings of 28–63 reflected pre-dialysis waste accumulation; a pre-session BUN of 20 suggests the kidneys are now clearing urea significantly between sessions. The 24-hour urine collection submitted May 12 will help quantify this directly.',
+      m_GFR_name: 'Filtration Rate',
+      m_GFR_what: 'The primary measure of how much the kidneys actively filter.',
+      m_GFR_why:  'All values are calculated (CKD-EPI 2021, male 46y) from creatinine — outpatient lab reports do not include eGFR. Apr 28: 6.5 mL/min (KDIGO G5, kidney failure). May 5: 30 (G3b, moderate-severe CKD). May 9: 41 (G3b, approaching G3a) — a dramatic three-stage improvement driven by the creatinine drop from 9.26 to 1.98. The 24-hour urine collection submitted May 12 will directly quantify independent kidney output alongside this filtration signal.',
+      m_BUN_CREAT_name: 'BUN / Creatinine',
+      m_BUN_CREAT_what: 'Compares two kidney waste products to characterise kidney stress.',
+      m_BUN_CREAT_why:  'Low ratio (3–4) is consistent with effective dialysis urea clearance. Apr 28 of 3 reflects good BUN clearance relative to creatinine.',
+      m_AST_name: 'AST',
+      m_AST_what: 'Liver-cell enzyme released when liver cells are stressed.',
+      m_AST_why:  'From 5,604+ to 21 at discharge and 27 on Apr 28 — both fully normal. A small uptick to 27 can reflect post-exertion muscle activity or minor fluctuation; it is well within normal range and not a concern.',
+      m_ALT_name: 'ALT',
+      m_ALT_what: 'Liver-specific enzyme that rises with hepatocellular injury.',
+      m_ALT_why:  '7 on Apr 25 — confirmed below detection threshold (<7 U/L). AST and ALT both fully normal. 🎉 Liver injury phase complete. ALT was not re-measured on Apr 28.',
+      m_ALKP_name: 'Alkaline Phosphatase',
+      m_ALKP_what: 'Reflects bile-duct health and can rise with bone activity.',
+      m_ALKP_why:  'Steady decline from 356 peak. At 91 on Apr 25 and 94 on Apr 28 — both comfortably within normal. Stable.',
+      m_BILT_name: 'Total Bilirubin',
+      m_BILT_what: 'Yellow pigment from old red blood cells, cleared by the liver.',
+      m_BILT_why:  'Peaked at 4.0 (jaundice level) early on. At 0.6 on Apr 25 — fully normal and holding steady.',
+      m_ALB_name: 'Albumin',
+      m_ALB_what: 'Main liver-made protein. Carries nutrients, holds fluid in vessels.',
+      m_ALB_why:  'At 3.4 on Apr 28 — approaching the 3.5 normal floor after weeks of gradual rebuild. The pace of improvement is now visible: 2.4 at discharge (Apr 25) to 3.4 just 3 days later. Albumin has a serum half-life of ~20 days; this trajectory is ahead of schedule.',
+      m_TPROT_name: 'Total Protein',
+      m_TPROT_what: 'Albumin plus immune proteins. Reflects nutrition + liver synthesis.',
+      m_TPROT_why:  '5.5 on Apr 28 — climbing steadily. Direction is correct; nutrition at home is supporting the rebuild.',
+      m_WBC_name: 'White Blood Cells',
+      m_WBC_what: 'Immune defense — fights infection.',
+      m_WBC_why:  'From 0.67 to 7.2 on Apr 28 — solidly within normal. Note: prednisone (started Apr 19) elevates WBC; readings since then are mixed signal but the trajectory is positive and the overall marrow recovery story is intact.',
+      m_HGB_name: 'Hemoglobin',
+      m_HGB_what: 'Carries oxygen inside red blood cells.',
+      m_HGB_why:  'Four transfusions supported oxygen delivery while marrow rebuilt. Last transfusion Apr 21; now at 8.4 on Apr 28 — rising independently. The marrow is sustaining and improving hemoglobin without any external support. Still below normal (13.5), but the direction and independence are the key signals.',
+      m_PLT_name: 'Platelets',
+      m_PLT_what: 'Cell fragments that enable clotting.',
+      m_PLT_why:  'From 65 to 174 on Apr 28 — solidly above the 150 normal floor. 🎉 Confirmed genuine bone marrow production; 150 at discharge was the threshold, 174 shows it is holding and climbing.',
+      m_RBC_name: 'Red Blood Cells',
+      m_RBC_what: 'Oxygen-delivery vessels of the body.',
+      m_RBC_why:  'Rising from 2.45 at discharge to 2.78 on Apr 28 — marrow producing independently. Still below normal (4.5), but the climb without transfusion is the meaningful signal.',
+      m_HCT_name: 'Hematocrit',
+      m_HCT_what: 'Percentage of blood made up of red cells.',
+      m_HCT_why:  '25.3 on Apr 28 — rising from 21.3 at discharge. Mirrors hemoglobin; will build back as marrow recovery continues.',
+      m_RDW_name: 'Red Cell Variation',
+      m_RDW_what: 'How much red cell sizes vary.',
+      m_RDW_why:  '15.1 on Apr 28 — slightly above the 14.5 normal ceiling, which is actually a positive signal here: new red cells of different sizes entering circulation from the marrow. A rising RDW in this context means the marrow is at work.',
+      m_NA_name: 'Sodium',
+      m_NA_what: 'Primary electrolyte, governs cell water balance.',
+      m_NA_why:  'From critically low 115 at admission to 135 on May 9 — one step from the 136 normal floor. Sodium has been carefully corrected through dialysis and fluid management. Watching for sustained 136+.',
+      m_K_name: 'Potassium',
+      m_K_what: 'Keeps the heart beating in rhythm.',
+      m_K_why:  'Comfortably in range at 4.2 on Apr 28. Dialysis directly regulates this.',
+      m_CL_name: 'Chloride',
+      m_CL_what: 'Pairs with sodium for fluid + acid-base balance.',
+      m_CL_why:  '95 on Apr 28 — just below the lower boundary, tracking the sodium pattern. Improving.',
+      m_CO2_name: 'Bicarbonate',
+      m_CO2_what: 'Blood acid-base buffer.',
+      m_CO2_why:  'Holding 26–27 over recent days — comfortably in range. Effective dialysis management.',
+      m_ANION_name: 'Anion Gap',
+      m_ANION_what: 'Detects unusual acid accumulation.',
+      m_ANION_why:  '12 on May 9 — exactly at the upper boundary of the 8–12 normal range, down from 21.1 at peak. As kidney function recovers, the acid-base balance is normalizing. One of the cleaner electrolyte recoveries of this admission.',
+      m_GLU_name: 'Glucose',
+      m_GLU_what: 'Blood sugar — primary cell fuel.',
+      m_GLU_why:  '82 on Apr 25 — within normal. Not measured on Apr 28 outpatient draw.',
+      m_CA_name: 'Calcium',
+      m_CA_what: 'Bone, nerve, and muscle (incl. heart).',
+      m_CA_why:  '8.4 on Apr 28 — very close to the 8.5 normal floor. Consistent improvement from 8.0 at discharge. Calcium supplementation is part of the outpatient plan alongside phosphorus management.',
+      sys_kidney_name:   'Kidneys',
+      sys_kidney_label:  'Kidneys',
+      sys_kidney_desc:   'The kidneys act as the body\'s filtration plant — removing waste, regulating minerals, and controlling fluid balance. When they need support, dialysis steps in. KA\'s kidneys are on outpatient dialysis and recovering rapidly: creatinine fell from a peak of 12.52 to 1.98 by May 9, and BUN is now within the normal range. The D markers in each chart show dialysis session days.',
+      sys_kidney_hl:     'Creatinine 1.98 on May 9 — down from 9.26 on Apr 28 · 7 sessions complete',
+      sys_kidney_status: 'Outpatient dialysis ongoing · kidneys recovering strongly',
+      sys_liver_name:    'Liver',
+      sys_liver_label:   'Liver',
+      sys_liver_desc:    'The liver has two distinct recovery phases. The first — the <strong>injury phase</strong> — is complete: AST, ALT, and bilirubin are all fully normal. The second — <strong>protein synthesis rebuilding</strong> — is accelerating: albumin jumped from 2.4 at discharge to 3.4 on Apr 28, nearly reaching the 3.5 normal floor in just three days. Total protein is also climbing steadily.',
+      sys_liver_hl:      'Albumin 3.4 on Apr 28 — approaching 3.5 normal floor',
+      sys_liver_status:  'Injury phase resolved 🎉 · proteins rapidly rebuilding',
+      sys_blood_name:    'Blood & Immune',
+      sys_blood_label:   'Blood & Immune',
+      sys_blood_desc:    'Blood has three working components: white blood cells (fight infection), red blood cells and hemoglobin (carry oxygen), and platelets (stop bleeding). All three were suppressed in early April and have been recovering. The T markers show transfusion days — hemoglobin readings near those days reflect that support. Platelets and white blood cells are now fully in the normal range; red blood cells and hemoglobin are climbing independently.',
+      sys_blood_hl:      'Platelets 174 · HGB 8.4 on Apr 28 — both rising without transfusion',
+      sys_blood_status:  'Bone marrow actively rebuilding',
+      sys_electrolytes_name:   'Electrolytes',
+      sys_electrolytes_label:  'Electrolytes',
+      sys_electrolytes_desc:   'Electrolytes control nerve signaling, muscle contraction, fluid balance, and the body\'s acid-base chemistry. They were significantly disrupted at admission and have been carefully guided back toward balance. Sodium is one step from the normal floor; anion gap and CO2 are fully in range; potassium and chloride are stable.',
+      sys_electrolytes_hl:     'Sodium 135 — one step from 136 normal floor · Anion gap 12, at normal ceiling',
+      sys_electrolytes_status: 'Most levels stabilising well',
       gp_uo_events_title: 'Urine Output · Individual Events',
       gp_uo_events_sub:   'Each bar segment = one void event · 17 days · 101 events total',
       gp_uo_normal_line:  '2,000 mL/day normal floor',
@@ -545,22 +643,30 @@ const DRESS_CONTENT = {
 
 function t(key) {
   const lang = document.body.getAttribute('data-lang') || 'en';
-  return LANGS[lang]?.strings?.[key] ?? LANGS.en.strings[key] ?? key;
+  const val = LANGS[lang]?.strings?.[key] ?? LANGS.en.strings[key];
+  if (val == null) { console.warn('[i18n] missing key:', key); return key; }
+  return val;
 }
 
 function tM(mk, f) {
   const lang = document.body.getAttribute('data-lang') || 'en';
-  if (lang === 'en') return M[mk]?.[f] ?? '';
-  return LANGS[lang]?.strings?.['m_' + mk + '_' + f] ?? M[mk]?.[f] ?? '';
+  const k = 'm_' + mk + '_' + f;
+  const val = LANGS[lang]?.strings?.[k] ?? LANGS.en.strings[k];
+  if (val == null) { console.warn('[i18n] missing marker key:', k); return ''; }
+  return val;
 }
 
 function tSys(sk, f) {
   const lang = document.body.getAttribute('data-lang') || 'en';
-  if (lang === 'en') return SYSTEMS[sk]?.[f] ?? '';
-  return LANGS[lang]?.strings?.['sys_' + sk + '_' + f] ?? SYSTEMS[sk]?.[f] ?? '';
+  const k = 'sys_' + sk + '_' + f;
+  const val = LANGS[lang]?.strings?.[k] ?? LANGS.en.strings[k];
+  if (val == null) { console.warn('[i18n] missing system key:', k); return ''; }
+  return val;
 }
 
 function tDress(key) {
   const lang = document.body.getAttribute('data-lang') || 'en';
-  return DRESS_CONTENT[lang]?.[key] ?? DRESS_CONTENT.en[key] ?? '';
+  const val = DRESS_CONTENT[lang]?.[key] ?? DRESS_CONTENT.en[key];
+  if (val == null) { console.warn('[i18n] missing DRESS key:', key); return ''; }
+  return val;
 }

@@ -1,3 +1,6 @@
+/* All display strings must live in src/i18n.js — never hardcode text here.
+   Use t('key'), tM(markerKey, field), tSys(systemKey, field), or tDress(key). */
+
 function renderOverview(){
   const sysCards=Object.keys(SYSTEMS).map(ringCard).join('');
   const tl=TIMELINE.map((it,idx)=>{

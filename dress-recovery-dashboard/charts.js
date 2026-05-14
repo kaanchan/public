@@ -1,3 +1,6 @@
+/* All display strings must live in src/i18n.js — never hardcode text here.
+   Use t('key'), tM(markerKey, field), or tSys(systemKey, field). */
+
 /* ═══════════════════════════════════════════════════════════════
    UO EVENTS — stacked-bar chart (one segment per void event per day)
    ═══════════════════════════════════════════════════════════════ */

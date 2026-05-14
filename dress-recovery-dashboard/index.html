@@ -636,6 +636,9 @@ body.full{padding:0}
 <script src="charts.js"></script>
 <script src="tabs.js"></script>
 <script>
+/* All display strings must live in src/i18n.js — never hardcode text here.
+   Static HTML text uses data-i18n="key"; dynamic JS uses t() / tM() / tSys().
+   A missing key logs a console.warn and renders the bare key name so it is visible. */
 function applyI18n(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     el.innerHTML=t(el.getAttribute('data-i18n'));
@@ -694,6 +697,10 @@ document.addEventListener('DOMContentLoaded',()=>{
 
   // Apply defaults from CONFIG (keeps config.js as single source of truth for initial state)
   Object.entries(CONFIG.defaults).forEach(([set, val]) => applyControl(set, val));
+
+  // URL param ?lang=ne (or any known language code) overrides the config default
+  const urlLang = new URLSearchParams(location.search).get('lang');
+  if (urlLang && LANGS[urlLang]) applyControl('lang', urlLang);
 
   applyI18n();
   renderOverview();
