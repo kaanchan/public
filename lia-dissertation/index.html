@@ -1175,8 +1175,12 @@ function parseFeedbackGlobal() {
   if (!raw) return null;
   if (typeof raw === 'object') return raw;
   if (typeof raw === 'string') {
-    try { return JSON.parse(raw); }
-    catch (e) { console.warn('parseFeedbackGlobal: V1_FEEDBACK_DATA is a string but not valid JSON:', e.message); return null; }
+    try {
+      // v1-feedback.js now ships as base64 to avoid template-literal escape issues
+      const decoded = typeof atob !== 'undefined' ? atob(raw) : raw;
+      return JSON.parse(decoded);
+    }
+    catch (e) { console.warn('parseFeedbackGlobal: could not decode/parse V1_FEEDBACK_DATA:', e.message); return null; }
   }
   return null;
 }
@@ -1539,6 +1543,7 @@ function renderTab(tab) {
   }
   emptyEl.style.display = 'none';
   listEl.innerHTML = safeHTML(suggestions.map(s => renderCard(s)).join(''));
+  wireListeners(listEl);
 
   // Count for pass breakdown
   const lightCount = query(`SELECT COUNT(*) as c FROM suggestions WHERE analysis_type=? AND pass_type='light'`, [tab]);
@@ -1595,17 +1600,15 @@ function renderCard(s) {
   const metaStyle = (hasRealSection || hasRealLine) ? '' : ' style="color:var(--text-faint)"';
 
   const actionButtons = s.status === 'pending' ? `
-    <button class="action-btn accept" onclick="event.stopPropagation();acceptSuggestion('${s.id}')">✓ Accept</button>
-    <button class="action-btn deny"   onclick="event.stopPropagation();openDenyEditor('${s.id}')">✗ Deny</button>
-    <button class="action-btn modify" onclick="event.stopPropagation();openModifyEditor('${s.id}')">✎ Modify…</button>
+    <button class="action-btn accept" data-action="accept">✓ Accept</button>
+    <button class="action-btn deny"   data-action="deny">✗ Deny</button>
+    <button class="action-btn modify" data-action="modify">✎ Modify…</button>
   ` : `
-    <button class="action-btn undo" onclick="event.stopPropagation();undoDecision('${s.id}')">↩ Undo</button>
+    <button class="action-btn undo" data-action="undo">↩ Undo</button>
   `;
 
   return `
-  <div class="sug-card ${passClass} ${statusClass}" id="card-${s.id}" tabindex="0"
-       onclick="scrollDocToSuggestion('${s.id}')"
-       onkeydown="handleCardKey(event, '${s.id}')">
+  <div class="sug-card ${passClass} ${statusClass}" id="card-${s.id}" tabindex="0">
     <div class="sug-header">
       <span class="sug-id">${esc(s.id)}</span>
       ${passDeepBadge}
@@ -1645,10 +1648,11 @@ function openDenyEditor(id) {
       <div class="editor-label">Optional note (why are you declining this suggestion?)</div>
       <textarea id="deny-note-${esc(id)}" placeholder="e.g. Not applicable to this section…" rows="2"></textarea>
       <div class="editor-actions">
-        <button class="editor-btn save" onclick="confirmDeny('${esc(id)}')">✗ Confirm Deny</button>
-        <button class="editor-btn cancel" onclick="closeEditor('${esc(id)}')">Cancel</button>
+        <button class="editor-btn save" data-action="confirm-deny">✗ Confirm Deny</button>
+        <button class="editor-btn cancel" data-action="close-editor">Cancel</button>
       </div>
     </div>`);
+  wireListeners(editorEl);
   setTimeout(() => document.getElementById(`deny-note-${id}`)?.focus(), 50);
 }
 
@@ -1677,10 +1681,11 @@ function openModifyEditor(id) {
       <div class="editor-label" style="margin-top:8px">Optional note</div>
       <textarea id="modify-note-${esc(id)}" rows="1" placeholder="Add a note…"></textarea>
       <div class="editor-actions">
-        <button class="editor-btn save" onclick="confirmModify('${esc(id)}')">✎ Save Modification</button>
-        <button class="editor-btn cancel" onclick="closeEditor('${esc(id)}')">Cancel</button>
+        <button class="editor-btn save" data-action="confirm-modify">✎ Save Modification</button>
+        <button class="editor-btn cancel" data-action="close-editor">Cancel</button>
       </div>
     </div>`);
+  wireListeners(editorEl);
   setTimeout(() => { const ta = document.getElementById(`modify-text-${id}`); if(ta) { ta.focus(); ta.select(); } }, 50);
 }
 
@@ -1727,6 +1732,7 @@ function persistAndRefresh(changedId) {
     if (cardEl) {
       const newCard = document.createElement('div');
       newCard.innerHTML = safeHTML(renderCard(sug));
+      wireListeners(newCard);
       cardEl.replaceWith(newCard.firstElementChild);
     }
   }
@@ -1872,7 +1878,7 @@ function buildBreakdownHtml(tab) {
     const v = computeSubScore(c.categories, c.autoDeduct);
     const vTxt = v == null ? '—' : v.toFixed(0);
     const cats = esc(JSON.stringify(c.categories));
-    return `<div class="breakdown-row" onclick='event.stopPropagation(); filterByCategory(${cats}, "${tab}")' title="Click to filter the ${esc(tab)} tab to: ${esc(c.categories.join(', '))}">
+    return `<div class="breakdown-row" data-cats='${cats}' data-tab="${tab}" title="Click to filter the ${esc(tab)} tab to: ${esc(c.categories.join(', '))}">
       <span class="breakdown-dot ${subScoreDotClass(v)}"></span>
       <span class="br-label">${esc(c.label)}</span>
       <span class="br-score">${vTxt}/10</span>
@@ -1888,7 +1894,7 @@ function toggleScoreCard(wrapId, tab) {
   // Lazily populate the breakdown the first time it expands
   if (willExpand && wrap.dataset.loaded !== '1') {
     const bd = wrap.querySelector('.score-breakdown');
-    if (bd) { bd.innerHTML = safeHTML(buildBreakdownHtml(tab)); wrap.dataset.loaded = '1'; }
+    if (bd) { bd.innerHTML = safeHTML(buildBreakdownHtml(tab)); bd.querySelectorAll('.breakdown-row[data-cats]').forEach(row => { row.addEventListener('click', e => { e.stopPropagation(); filterByCategory(JSON.parse(row.dataset.cats), row.dataset.tab); }); }); wrap.dataset.loaded = '1'; }
   }
   wrap.classList.toggle('expanded', willExpand);
   // Navigate to the relevant tab (preserves existing click-to-tab behaviour)
@@ -1927,7 +1933,8 @@ function renderFilterBar() {
     bar.className = 'filter-active-bar';
     panel.insertBefore(bar, panel.firstChild);
   }
-  bar.innerHTML = safeHTML(`<span>${esc(labelTxt)}</span><button class="editor-btn cancel" style="padding:2px 10px" onclick="clearCategoryFilter()">Clear filter</button>`);
+  bar.innerHTML = safeHTML(`<span>${esc(labelTxt)}</span><button class="editor-btn cancel" style="padding:2px 10px" data-action="clear-filter">Clear filter</button>`);
+  bar.querySelector('[data-action="clear-filter"]')?.addEventListener('click', clearCategoryFilter);
 }
 
 function renderReportOverview() {
@@ -2134,6 +2141,45 @@ function scrollDocToSection(sectionName) {
       return;
     }
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EVENT DELEGATION — wire all dynamic card/editor interactions post-insertion
+// ═══════════════════════════════════════════════════════════════════════════
+function wireListeners(container) {
+  // Card body click → scroll doc; action buttons dispatch via data-action
+  container.querySelectorAll('.sug-card').forEach(card => {
+    const id = card.id.replace(/^card-/, '');
+    card.addEventListener('keydown', e => handleCardKey(e, id));
+    card.addEventListener('click', e => {
+      const btn = e.target.closest('.action-btn[data-action]');
+      if (btn) {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        if (action === 'accept') acceptSuggestion(id);
+        else if (action === 'deny')   openDenyEditor(id);
+        else if (action === 'modify') openModifyEditor(id);
+        else if (action === 'undo')   undoDecision(id);
+        return;
+      }
+      if (!e.target.closest('.sug-actions, .deny-note-editor, .modify-editor')) {
+        scrollDocToSuggestion(id);
+      }
+    });
+  });
+  // Inline editor buttons (deny / modify)
+  container.querySelectorAll('.editor-btn[data-action]').forEach(btn => {
+    const card = btn.closest('.sug-card');
+    if (!card) return;
+    const id = card.id.replace(/^card-/, '');
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const action = btn.dataset.action;
+      if (action === 'confirm-deny')   confirmDeny(id);
+      else if (action === 'confirm-modify') confirmModify(id);
+      else if (action === 'close-editor')   closeEditor(id);
+    });
+  });
 }
 
 function scrollDocToSuggestion(id) {
@@ -2789,9 +2835,7 @@ function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
  */
 function safeHTML(html) {
   if (typeof DOMPurify !== 'undefined') {
-    // ADD_ATTR preserves onclick/onkeydown on developer-authored card templates.
-    // All user-controlled strings are pre-escaped via esc() before reaching here.
-    return DOMPurify.sanitize(html, { USE_PROFILES: { html: true }, ADD_ATTR: ['onclick', 'onkeydown'] });
+    return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
   }
   return html; // fallback — esc() still protects all data fields
 }
