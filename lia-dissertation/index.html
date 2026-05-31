@@ -1,0 +1,2790 @@
+<!DOCTYPE html>
+<html lang="ro" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dissertatie Feedback — Lia Zamfir</title>
+<!--
+  CDN SECURITY NOTE
+  =================
+  To add Subresource Integrity (SRI) hashes, visit each CDN URL in a browser and copy
+  the sha384 hash shown on the library's CDN page, then add integrity="sha384-..." below.
+  - sql.js:    https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js  (cdnjs shows hash on page)
+  - Chart.js:  https://www.jsdelivr.com/package/npm/chart.js?version=4.4.7
+  - DOMPurify: https://www.jsdelivr.com/package/npm/dompurify?version=3.1.6
+  - marked:    https://www.jsdelivr.com/package/npm/marked?version=12.0.0
+  All scripts are pinned to exact versions below.
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js" crossorigin="anonymous"></script>
+<style>
+/* ─── CSS RESET & CUSTOM PROPERTIES ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:           #F8F7F4;
+  --bg-card:      #FFFFFF;
+  --bg-sidebar:   #F1EFE9;
+  --bg-hover:     #EDEAE3;
+  --text:         #1A1F36;
+  --text-muted:   #5A6070;
+  --text-faint:   #9AA0B0;
+  --border:       #E2DED6;
+  --border-focus: #4F6BED;
+  --shadow:       rgba(26,31,54,0.08);
+  --shadow-md:    rgba(26,31,54,0.14);
+
+  --critical:     #DC2626;
+  --high:         #EA580C;
+  --medium:       #CA8A04;
+  --low:          #2563EB;
+  --accepted:     #16A34A;
+  --denied:       #6B7280;
+  --modified:     #7C3AED;
+  --pending:      #4F6BED;
+
+  --radius:       8px;
+  --radius-sm:    5px;
+  --transition:   150ms ease;
+  --font:         'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono:    'Cascadia Code', 'Consolas', 'Courier New', monospace;
+
+  --header-h:     64px;
+  --sidebar-w:    260px;
+}
+
+[data-theme="dark"] {
+  --bg:           #111318;
+  --bg-card:      #1C2030;
+  --bg-sidebar:   #161A26;
+  --bg-hover:     #232840;
+  --text:         #E8EAF0;
+  --text-muted:   #8A93B0;
+  --text-faint:   #4A5270;
+  --border:       #2A3050;
+  --shadow:       rgba(0,0,0,0.3);
+  --shadow-md:    rgba(0,0,0,0.5);
+}
+
+html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--text); }
+
+/* ─── LAYOUT ──────────────────────────────────────────────────────────── */
+#app { display: flex; flex-direction: column; height: 100vh; }
+
+/* HEADER */
+#header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--header-h);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 4px var(--shadow);
+  display: flex; align-items: center; gap: 16px; padding: 0 20px;
+}
+#header-title { flex: 1; min-width: 0; }
+#header-title h1 { font-size: 1.05rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#header-title p { font-size: 0.75rem; color: var(--text-muted); }
+#progress-wrap { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+#progress-label { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
+#progress-bar-outer { width: 140px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+#progress-bar-inner { height: 100%; background: var(--accepted); border-radius: 3px; transition: width 0.4s ease; width: 0%; }
+.header-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg);
+  color: var(--text-muted); font-size: 0.78rem; cursor: pointer;
+  transition: var(--transition); white-space: nowrap;
+}
+.header-btn:hover { background: var(--bg-hover); color: var(--text); border-color: var(--text-muted); }
+.header-btn.primary { background: var(--pending); color: #fff; border-color: var(--pending); }
+.header-btn.primary:hover { opacity: 0.88; }
+#theme-toggle { padding: 6px 8px; font-size: 1.1rem; }
+
+/* BODY FLEX */
+#body-wrap {
+  display: flex;
+  margin-top: var(--header-h);
+  height: calc(100vh - var(--header-h));
+  overflow: hidden;
+}
+
+/* SIDEBAR */
+#sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+  transition: width 0.2s ease, transform 0.2s ease;
+}
+#sidebar.collapsed { width: 0; overflow: hidden; }
+
+.sidebar-section { padding: 14px 14px 8px; }
+.sidebar-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 6px; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: var(--radius-sm);
+  cursor: pointer; color: var(--text-muted); font-size: 0.85rem;
+  transition: var(--transition); margin-bottom: 2px;
+}
+.nav-item:hover { background: var(--bg-hover); color: var(--text); }
+.nav-item.active { background: var(--pending); color: #fff; }
+.nav-item.active .badge { background: rgba(255,255,255,0.25); color: #fff; }
+.nav-icon { font-size: 1rem; width: 20px; text-align: center; flex-shrink: 0; }
+.nav-label { flex: 1; }
+.badge {
+  background: var(--border); color: var(--text-muted);
+  font-size: 0.68rem; font-weight: 700; padding: 2px 6px;
+  border-radius: 10px; min-width: 20px; text-align: center; flex-shrink: 0;
+}
+.badge.critical { background: var(--critical); color: #fff; }
+
+.filter-row { margin-bottom: 10px; }
+.filter-row label { font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
+.filter-row select, .filter-row .toggle-group {
+  width: 100%;
+}
+select {
+  width: 100%; padding: 5px 8px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg-card);
+  color: var(--text); font-size: 0.78rem; cursor: pointer;
+}
+.toggle-group { display: flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.toggle-opt {
+  flex: 1; padding: 5px 4px; text-align: center;
+  font-size: 0.72rem; cursor: pointer; color: var(--text-muted);
+  background: var(--bg-card); transition: var(--transition);
+  user-select: none;
+}
+.toggle-opt:not(:last-child) { border-right: 1px solid var(--border); }
+.toggle-opt.active { background: var(--pending); color: #fff; }
+
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.stat-chip {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 6px 8px; text-align: center;
+}
+.stat-chip .num { font-size: 1.1rem; font-weight: 700; }
+.stat-chip .lbl { font-size: 0.65rem; color: var(--text-muted); }
+.stat-chip.accepted .num { color: var(--accepted); }
+.stat-chip.denied .num { color: var(--denied); }
+.stat-chip.modified .num { color: var(--modified); }
+.stat-chip.pending .num { color: var(--pending); }
+
+/* MAIN CONTENT */
+#main {
+  flex: 1; overflow-y: auto; padding: 24px 28px;
+}
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* OVERVIEW */
+.overview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.ov-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px; box-shadow: 0 1px 4px var(--shadow);
+  text-align: center;
+}
+.ov-card .big-num { font-size: 2.4rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+.ov-card .ov-label { font-size: 0.78rem; color: var(--text-muted); }
+
+.chart-wrap {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; box-shadow: 0 1px 4px var(--shadow);
+  margin-bottom: 24px; max-width: 600px; margin-left: auto; margin-right: auto;
+}
+.chart-title { font-size: 0.9rem; font-weight: 600; color: var(--text); margin-bottom: 16px; text-align: center; }
+.chart-canvas-wrap { position: relative; height: 320px; }
+.score-view-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 1px 4px var(--shadow);
+  margin-bottom: 20px; overflow: hidden;
+}
+.score-view-tabs { display: flex; border-bottom: 1px solid var(--border); }
+.sco-tab {
+  flex: 1; padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; font-size: 0.85rem; font-weight: 500; color: var(--text-faint);
+  margin-bottom: -1px; transition: color 0.15s, border-color 0.15s;
+}
+.sco-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.sco-tab:hover:not(.active) { color: var(--text); }
+.sco-pane { padding: 20px; }
+
+.section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+.section-subtitle { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 20px; }
+
+/* SUGGESTION CARDS */
+.suggestions-list { display: flex; flex-direction: column; gap: 14px; }
+.sug-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 1px 4px var(--shadow);
+  transition: box-shadow var(--transition), opacity var(--transition);
+  outline: none;
+}
+.sug-card:hover { box-shadow: 0 4px 12px var(--shadow-md); }
+.sug-card:focus-within { border-color: var(--border-focus); }
+.sug-card.status-accepted { opacity: 0.75; border-left: 4px solid var(--accepted); }
+.sug-card.status-denied   { opacity: 0.65; border-left: 4px solid var(--denied); }
+.sug-card.status-modified { opacity: 0.8;  border-left: 4px solid var(--modified); }
+.sug-card.pass-deep { border-style: dashed; }
+
+.sug-header {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.sug-id { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: var(--text-muted); }
+.sug-pass-badge {
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.05em;
+  padding: 2px 6px; border-radius: 4px;
+  background: var(--bg-sidebar); color: var(--text-muted);
+  text-transform: uppercase;
+}
+.sug-pass-badge.deep { background: #EDE9FE; color: #7C3AED; }
+[data-theme="dark"] .sug-pass-badge.deep { background: #3B1F6B; color: #C4B5FD; }
+
+.sev-badge {
+  font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+  display: flex; align-items: center; gap: 4px;
+}
+.sev-critical { background: #FEE2E2; color: var(--critical); }
+.sev-high     { background: #FFEDD5; color: var(--high); }
+.sev-medium   { background: #FEF9C3; color: var(--medium); }
+.sev-low      { background: #DBEAFE; color: var(--low); }
+[data-theme="dark"] .sev-critical { background: #3B0E0E; }
+[data-theme="dark"] .sev-high     { background: #3B1A0E; }
+[data-theme="dark"] .sev-medium   { background: #3B2E00; }
+[data-theme="dark"] .sev-low      { background: #0F2040; }
+.sev-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.sev-critical .sev-dot { background: var(--critical); }
+.sev-high     .sev-dot { background: var(--high); }
+.sev-medium   .sev-dot { background: var(--medium); }
+.sev-low      .sev-dot { background: var(--low); }
+
+.sug-category { font-size: 0.72rem; color: var(--text-muted); margin-left: auto; }
+.sug-status-badge { margin-left: auto; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+.sug-status-badge.accepted { background: #DCFCE7; color: var(--accepted); }
+.sug-status-badge.denied   { background: #F3F4F6; color: var(--denied); }
+.sug-status-badge.modified { background: #EDE9FE; color: var(--modified); }
+[data-theme="dark"] .sug-status-badge.accepted { background: #052E16; }
+[data-theme="dark"] .sug-status-badge.denied   { background: #1A1F2E; }
+[data-theme="dark"] .sug-status-badge.modified { background: #2E1065; }
+
+.sug-body { padding: 12px 14px; }
+.sug-section-line { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+
+.text-block-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 4px; margin-top: 10px; }
+.text-block {
+  font-family: var(--font-mono); font-size: 0.83rem; line-height: 1.5;
+  padding: 8px 10px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); white-space: pre-wrap; word-break: break-word;
+}
+.text-original  { background: #FFF5F5; border-color: #FECACA; color: #7F1D1D; }
+.text-suggested { background: #F0FDF4; border-color: #BBF7D0; color: #14532D; }
+[data-theme="dark"] .text-original  { background: #200808; border-color: #5B1010; color: #FCA5A5; }
+[data-theme="dark"] .text-suggested { background: #052014; border-color: #0C4A25; color: #86EFAC; }
+
+.reason-text { font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; line-height: 1.55; }
+
+/* ACTION BUTTONS */
+.sug-actions { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.action-btn {
+  padding: 6px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--bg);
+  font-size: 0.78rem; cursor: pointer; transition: var(--transition);
+  font-family: var(--font); display: flex; align-items: center; gap: 5px;
+}
+.action-btn:hover { background: var(--bg-hover); }
+.action-btn.accept { border-color: var(--accepted); color: var(--accepted); }
+.action-btn.accept:hover { background: #DCFCE7; }
+.action-btn.deny   { border-color: var(--denied);   color: var(--denied); }
+.action-btn.deny:hover { background: #F3F4F6; }
+.action-btn.modify { border-color: var(--modified);  color: var(--modified); }
+.action-btn.modify:hover { background: #EDE9FE; }
+.action-btn.undo   { border-color: var(--text-faint); color: var(--text-faint); }
+.action-btn.undo:hover { background: var(--bg-hover); }
+[data-theme="dark"] .action-btn.accept:hover { background: #052E16; }
+[data-theme="dark"] .action-btn.deny:hover   { background: #1F2937; }
+[data-theme="dark"] .action-btn.modify:hover { background: #2E1065; }
+
+/* INLINE EDITORS */
+.modify-editor, .deny-note-editor { padding: 10px 14px; border-top: 1px solid var(--border); background: var(--bg-sidebar); }
+.modify-editor textarea, .deny-note-editor textarea {
+  width: 100%; min-height: 72px; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg-card); color: var(--text);
+  font-family: var(--font-mono); font-size: 0.82rem; resize: vertical;
+  transition: border-color var(--transition);
+}
+.modify-editor textarea:focus, .deny-note-editor textarea:focus { outline: none; border-color: var(--border-focus); }
+.editor-actions { display: flex; gap: 8px; margin-top: 8px; }
+.editor-btn {
+  padding: 5px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); font-size: 0.78rem; cursor: pointer;
+  font-family: var(--font); transition: var(--transition);
+}
+.editor-btn.save { background: var(--pending); color: #fff; border-color: var(--pending); }
+.editor-btn.save:hover { opacity: 0.88; }
+.editor-btn.cancel { background: var(--bg); color: var(--text-muted); }
+.editor-btn.cancel:hover { background: var(--bg-hover); }
+.editor-label { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
+
+/* TAB HEADER */
+.tab-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.tab-header-left h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
+.tab-header-left p { font-size: 0.82rem; color: var(--text-muted); }
+.score-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 8px 16px;
+  font-size: 0.82rem; color: var(--text-muted); box-shadow: 0 1px 4px var(--shadow);
+}
+.score-badge .score-num { font-size: 1.5rem; font-weight: 800; color: var(--text); }
+.pass-breakdown { font-size: 0.72rem; color: var(--text-faint); }
+
+/* EMPTY STATE */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+.empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+.empty-state p { font-size: 0.88rem; line-height: 1.6; max-width: 320px; margin: 0 auto; }
+
+/* REVISION TABLE */
+.rev-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; margin-top: 8px; }
+.rev-table th { padding: 8px 12px; text-align: left; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint); border-bottom: 2px solid var(--border); }
+.rev-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+.rev-table tr:last-child td { border-bottom: none; }
+.rev-table tr:hover td { background: var(--bg-hover); }
+
+/* DB STATUS BANNER — slim toast at bottom-right, never blocks content */
+#loading-overlay {
+  position: fixed; bottom: 16px; right: 16px; z-index: 50;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; font-size: 0.8rem; color: var(--text-muted);
+  max-width: 320px; pointer-events: none;
+}
+#loading-overlay.db-error {
+  background: #FEF2F2; border-color: #FCA5A5; color: #991B1B;
+  pointer-events: auto;
+}
+#loading-overlay.db-ready { display: none !important; }
+.spinner {
+  width: 12px; height: 12px; border: 2px solid var(--border);
+  border-top-color: var(--pending); border-radius: 50%;
+  animation: spin 0.7s linear infinite; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading-overlay p { margin: 0; }
+
+/* TOAST */
+#toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 9000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast {
+  background: var(--text); color: var(--bg); padding: 10px 18px;
+  border-radius: var(--radius-sm); font-size: 0.82rem; box-shadow: 0 4px 12px var(--shadow-md);
+  animation: slideInToast 0.2s ease; pointer-events: auto;
+}
+@keyframes slideInToast { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.toast.success { background: var(--accepted); }
+.toast.error   { background: var(--critical); color: #fff; }
+
+/* DRAG DROP ZONE */
+.drop-zone {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 40px; text-align: center; color: var(--text-muted);
+  transition: var(--transition); cursor: pointer; font-size: 0.88rem;
+}
+.drop-zone.drag-over { border-color: var(--pending); background: #EEF2FF; color: var(--pending); }
+[data-theme="dark"] .drop-zone.drag-over { background: #1E2456; }
+.drop-zone p { margin-top: 8px; font-size: 0.78rem; color: var(--text-faint); }
+
+/* MODAL */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 8000;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.modal {
+  background: var(--bg-card); border-radius: var(--radius); box-shadow: 0 20px 40px var(--shadow-md);
+  max-width: 540px; width: 100%; max-height: 80vh; display: flex; flex-direction: column;
+}
+.modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-header h3 { font-size: 1.0rem; font-weight: 700; }
+.modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); padding: 2px 6px; border-radius: 4px; }
+.modal-close:hover { background: var(--bg-hover); color: var(--text); }
+.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* TOGGLE SIDEBAR BUTTON */
+#sidebar-toggle {
+  position: fixed; top: calc(var(--header-h) + 12px); left: 12px; z-index: 200;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 4px 8px; cursor: pointer;
+  font-size: 0.9rem; color: var(--text-muted); box-shadow: 0 1px 4px var(--shadow);
+  display: none;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  #sidebar { position: fixed; top: var(--header-h); left: 0; height: calc(100vh - var(--header-h)); z-index: 50; transform: translateX(0); }
+  #sidebar.collapsed { transform: translateX(-100%); width: var(--sidebar-w); }
+  #sidebar-toggle { display: block; }
+  #main { padding: 16px; }
+  #progress-wrap { display: none; }
+}
+@media (max-width: 600px) {
+  #header { padding: 0 12px; }
+  .header-btn span { display: none; }
+}
+
+/* DIVIDER */
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+/* STRENGTH CARD */
+.strength-card {
+  background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: var(--radius);
+  padding: 14px; margin-bottom: 10px; font-size: 0.82rem; color: #14532D; line-height: 1.55;
+}
+[data-theme="dark"] .strength-card { background: #052E16; border-color: #166534; color: #86EFAC; }
+.strength-card strong { display: block; margin-bottom: 4px; font-size: 0.85rem; }
+
+/* SCORES TABLE in overview */
+.scores-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.scores-table th { text-align: left; padding: 8px 12px; color: var(--text-faint); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 2px solid var(--border); }
+.scores-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.score-bar-cell { width: 140px; }
+.score-bar { height: 6px; border-radius: 3px; background: var(--pending); }
+
+/* auto-save indicator */
+#autosave-indicator { font-size: 0.7rem; color: var(--text-faint); white-space: nowrap; }
+
+/* ─── REPORT OVERVIEW PANEL (collapsible) ─────────────────────────────── */
+.report-overview {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: 0 1px 4px var(--shadow);
+  margin-bottom: 18px; overflow: hidden;
+}
+.report-overview-head {
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+  padding: 12px 18px; user-select: none;
+}
+.report-overview-head:hover { background: var(--bg-hover); }
+.report-overview-head .ro-title { font-size: 0.98rem; font-weight: 700; flex: 1; display: flex; align-items: center; gap: 10px; }
+.report-overview-head .ro-version {
+  font-size: 0.7rem; font-weight: 600; color: var(--text-muted);
+  background: var(--bg-sidebar); border: 1px solid var(--border);
+  padding: 2px 8px; border-radius: 10px;
+}
+.report-overview-head .ro-caret { font-size: 0.85rem; color: var(--text-muted); transition: transform 0.2s; }
+.report-overview.collapsed .ro-caret { transform: rotate(-90deg); }
+.report-overview-body { padding: 0 18px 18px; }
+.report-overview.collapsed .report-overview-body { display: none; }
+
+.score-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin: 14px 0; }
+.score-card {
+  cursor: pointer;
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 8px; text-align: center;
+}
+.score-card:hover { border-color: var(--pending); transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.1); }
+.score-card:hover .sc-nav { opacity: 1; }
+.score-card .sc-num { font-size: 1.4rem; font-weight: 800; line-height: 1; }
+.score-card .sc-lbl { font-size: 0.66rem; color: var(--text-muted); margin-top: 4px; }
+.score-card .sc-count { font-size: 0.62rem; color: var(--text-faint); margin-top: 2px; }
+.score-card .sc-nav { font-size: 0.58rem; color: var(--pending); margin-top: 3px; opacity: 0; transition: opacity 0.15s; }
+.score-card.good   .sc-num { color: var(--accepted); }
+.score-card.mid    .sc-num { color: var(--pending); }
+.score-card.poor   .sc-num { color: var(--high); }
+.score-card.bad    .sc-num { color: var(--critical); }
+
+/* ─── EXPANDABLE SCORE BREAKDOWN ─────────────────────────────────────── */
+.score-card-wrap { position: relative; }
+.score-card-wrap.expanded .score-card { border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-color: var(--pending); }
+.score-breakdown {
+  display: none; background: var(--bg-card);
+  border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  padding: 4px 0;
+}
+.score-card-wrap.expanded .score-breakdown { display: block; }
+.breakdown-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px; font-size: 0.72rem; cursor: pointer;
+  border-radius: 4px; margin: 0 4px;
+  transition: background 0.1s;
+}
+.breakdown-row:hover { background: var(--bg-hover); }
+.breakdown-row .br-label { flex: 1; color: var(--text); }
+.breakdown-row .br-score {
+  font-weight: 700; font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.breakdown-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.breakdown-dot.good { background: var(--accepted); }
+.breakdown-dot.mid  { background: var(--pending); }
+.breakdown-dot.poor { background: var(--high); }
+.breakdown-dot.bad  { background: var(--critical); }
+.filter-active-bar {
+  background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 6px;
+  padding: 4px 10px; font-size: 0.76rem; color: #4338CA;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+[data-theme="dark"] .filter-active-bar { background: #1E2456; border-color: #3730A3; color: #C7D2FE; }
+
+.critical-alert {
+  background: #FEF2F2; border: 1px solid #FCA5A5; border-left: 4px solid var(--critical);
+  border-radius: var(--radius-sm); padding: 12px 14px; margin-top: 14px;
+}
+[data-theme="dark"] .critical-alert { background: #2A0E0E; border-color: #7F1D1D; }
+.critical-alert .ca-title { font-size: 0.82rem; font-weight: 700; color: var(--critical); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.critical-alert ul { margin: 0; padding-left: 20px; }
+.critical-alert li { font-size: 0.8rem; color: var(--text); line-height: 1.6; }
+[data-theme="dark"] .critical-alert li { color: #FCA5A5; }
+.ro-chart-wrap { position: relative; height: 280px; max-width: 520px; margin: 8px auto 0; }
+
+/* ─── TWO-PANEL LAYOUT (doc + cards) ──────────────────────────────────── */
+.main-panels { display: flex; gap: 0; height: calc(100vh - 120px); }
+.doc-panel { width: 42%; border-right: 1px solid var(--border); overflow-y: auto; padding: 0; flex-shrink: 0; background: var(--bg-card); }
+.cards-panel { flex: 1; overflow-y: auto; padding: 16px; }
+.doc-panel-header { padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px; }
+.doc-panel-header .dph-title { font-size: 0.82rem; font-weight: 700; color: var(--text); }
+.doc-panel-header .dph-status { font-size: 0.74rem; color: var(--text-faint); margin-left: auto; }
+.doc-content { padding: 16px 20px; font-size: 0.87rem; line-height: 1.7; }
+.doc-content h1, .doc-content h2, .doc-content h3 { margin: 14px 0 8px; line-height: 1.3; }
+.doc-content h1 { font-size: 1.25rem; } .doc-content h2 { font-size: 1.1rem; } .doc-content h3 { font-size: 0.98rem; }
+.doc-content p { margin: 8px 0; }
+.doc-content ul, .doc-content ol { margin: 8px 0; padding-left: 22px; }
+.doc-content table { border-collapse: collapse; font-size: 0.82rem; margin: 10px 0; }
+.doc-content th, .doc-content td { border: 1px solid var(--border); padding: 4px 8px; }
+.doc-empty { padding: 40px 24px; text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+
+.anchor { cursor: pointer; font-size: 0.72em; vertical-align: super; border-radius: 3px; padding: 0 2px; transition: background 0.15s; user-select: none; }
+.anchor-critical { color: #DC2626; }
+.anchor-critical:hover, .anchor-critical.anchor-active { background: #FEE2E2; }
+.anchor-high { color: #EA580C; }
+.anchor-high:hover, .anchor-high.anchor-active { background: #FEF3C7; }
+/* Suggestion blocks are hidden in the HTML viewer — they're for Google Docs.
+   Information lives in the right-panel suggestion cards.
+   Toggle visible with the "Show annotations" button. */
+.claude-suggestion-block { display: none; }
+.show-inline-annotations .claude-suggestion-block {
+  display: block;
+  background: #FFFBEB; border-left: 3px solid #F59E0B;
+  padding: 6px 10px; margin: 6px 0; font-size: 0.82em; border-radius: 0 4px 4px 0;
+}
+[data-theme="dark"] .show-inline-annotations .claude-suggestion-block { background: #2A2410; }
+@keyframes anchorPulse { 0% { background: #FEF08A; } 100% { background: transparent; } }
+.anchor-pulse { animation: anchorPulse 1.5s ease-out; border-radius: 3px; }
+.sug-card.card-focused { box-shadow: 0 0 0 2px var(--pending), 0 4px 12px var(--shadow-md); }
+
+/* ─── MD REPORT VIEWER TAB ────────────────────────────────────────────── */
+.report-subtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.report-subtab {
+  padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--bg-card); color: var(--text-muted); font-size: 0.8rem; cursor: pointer;
+  transition: var(--transition);
+}
+.report-subtab:hover { background: var(--bg-hover); color: var(--text); }
+.report-subtab.active { background: var(--pending); color: #fff; border-color: var(--pending); }
+.report-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.report-note { font-size: 0.76rem; color: var(--text-muted); background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 12px; }
+.report-render {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px 24px; box-shadow: 0 1px 4px var(--shadow);
+  font-size: 0.88rem; line-height: 1.7; max-height: calc(100vh - 280px); overflow-y: auto;
+}
+.report-render h1 { font-size: 1.4rem; margin: 16px 0 10px; border-bottom: 2px solid var(--border); padding-bottom: 6px; }
+.report-render h2 { font-size: 1.15rem; margin: 16px 0 8px; }
+.report-render h3 { font-size: 1.0rem; margin: 12px 0 6px; }
+.report-render p { margin: 8px 0; }
+.report-render ul, .report-render ol { margin: 8px 0; padding-left: 24px; }
+.report-render li { margin: 3px 0; }
+.report-render code { font-family: var(--font-mono); background: var(--bg-sidebar); padding: 1px 5px; border-radius: 3px; font-size: 0.85em; }
+.report-render pre { background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; overflow-x: auto; }
+.report-render blockquote { border-left: 3px solid var(--pending); margin: 10px 0; padding: 4px 14px; color: var(--text-muted); }
+.report-render table { border-collapse: collapse; width: 100%; font-size: 0.84rem; margin: 12px 0; }
+.report-render th, .report-render td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+.report-render th { background: var(--bg-sidebar); font-weight: 700; }
+.report-empty { color: var(--text-faint); text-align: center; padding: 40px 20px; font-size: 0.85rem; }
+.report-version-badge {
+  display: inline-block; font-size: 0.7rem; font-weight: 600; color: var(--text-muted);
+  background: var(--bg-sidebar); border: 1px solid var(--border); padding: 2px 8px;
+  border-radius: 10px; margin-bottom: 12px;
+}
+
+@media (max-width: 860px) {
+  .main-panels { flex-direction: column; height: auto; }
+  .doc-panel { width: 100%; border-right: none; border-bottom: 1px solid var(--border); max-height: 45vh; }
+}
+</style>
+<!-- Pre-load feedback data and annotated document — works with file:// -->
+<!-- Cache-bust: 2026-05-31 — query string forces browsers to re-fetch regenerated data files -->
+<script src="data/v1-feedback.js?v=2026-05-31"></script>
+<script src="data/annotated-doc.js?v=2026-05-31"></script>
+<script src="data/reports.js?v=2026-05-31"></script>
+<script>
+  if (typeof window.V1_FEEDBACK_DATA === 'undefined')
+    console.warn('[lia-feedback] data/v1-feedback.js failed to load — suggestions unavailable.');
+  if (typeof window.ANNOTATED_DOC_MD === 'undefined')
+    console.warn('[lia-feedback] data/annotated-doc.js failed to load — document view unavailable.');
+  if (typeof window.V1_REPORTS === 'undefined')
+    console.warn('[lia-feedback] data/reports.js failed to load — reports will require manual load.');
+</script>
+</head>
+<body>
+
+<!-- ─── PASSWORD GATE ─────────────────────────────────────────────────── -->
+<div id="auth-gate" style="position:fixed;inset:0;z-index:99999;background:#F8F7F4;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,sans-serif;">
+  <div style="background:#fff;border:1px solid #E2DED6;border-radius:8px;padding:32px 28px;max-width:320px;width:90%;box-shadow:0 4px 20px rgba(26,31,54,0.12);text-align:center;">
+    <h2 style="margin:0 0 6px;font-size:1.05rem;color:#1A1F36;">Dissertație Feedback</h2>
+    <p style="font-size:0.82rem;color:#5A6070;margin:0 0 20px;">Introduceți parola de acces.</p>
+    <input id="auth-input" type="password" placeholder="Parolă"
+           style="width:100%;padding:8px 12px;border:1px solid #E2DED6;border-radius:5px;font-size:0.88rem;margin-bottom:10px;box-sizing:border-box;outline:none;"
+           onkeydown="if(event.key==='Enter')checkAuth()">
+    <button onclick="checkAuth()"
+            style="width:100%;padding:8px;background:#4F6BED;color:#fff;border:none;border-radius:5px;font-size:0.88rem;cursor:pointer;font-family:inherit;">
+      Continuă
+    </button>
+    <p id="auth-error" style="color:#DC2626;font-size:0.78rem;margin:8px 0 0;display:none;">Parolă incorectă.</p>
+  </div>
+</div>
+<script>
+const _AH = '234c92c02b6c33e104641bd4ceb8581506d9a45f66419f8102ab894554b2e6e0';
+async function checkAuth() {
+  const pw = document.getElementById('auth-input').value;
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  if (hash === _AH) {
+    document.getElementById('auth-gate').style.display = 'none';
+    try { localStorage.setItem('lia-auth', hash); } catch(e) {}
+  } else {
+    document.getElementById('auth-error').style.display = 'block';
+    document.getElementById('auth-input').select();
+  }
+}
+(async () => {
+  try {
+    const saved = localStorage.getItem('lia-auth');
+    if (saved === _AH) { document.getElementById('auth-gate').style.display = 'none'; return; }
+  } catch(e) {}
+  document.getElementById('auth-input').focus();
+})();
+</script>
+
+<!-- DB STATUS BANNER — non-blocking; hidden once ready -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p>Loading database engine… Suggestions will appear once ready.</p>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-wrap"></div>
+
+<!-- IMPORT MODAL -->
+<div id="import-modal" class="modal-backdrop" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Import Analysis Reports</h3>
+      <button class="modal-close" onclick="closeModal('import-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div style="font-size:2rem">📂</div>
+        <strong>Click to select or drag &amp; drop files</strong>
+        <p>Accepts feedback/*.md — you can select multiple files at once</p>
+      </div>
+      <input type="file" id="file-input" accept=".md,.txt" multiple style="display:none">
+      <div id="import-log" style="margin-top:14px; font-size:0.78rem; color:var(--text-muted); max-height:200px; overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="editor-btn cancel" onclick="closeModal('import-modal')">Close</button>
+      <button class="editor-btn save" id="import-commit-btn" style="display:none" onclick="finalizeImport()">Add to Database</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <header id="header">
+    <button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+    <div id="header-title">
+      <h1>Dissertație Feedback — Lia Zamfir</h1>
+      <p>Review &amp; Response Interface</p>
+    </div>
+    <div id="progress-wrap">
+      <span id="progress-label">0 of 0 reviewed</span>
+      <div id="progress-bar-outer"><div id="progress-bar-inner"></div></div>
+    </div>
+    <span id="autosave-indicator" title="Changes saved automatically">● Saved</span>
+    <button class="header-btn" onclick="openModal('import-modal')"><span>⬆</span> <span>Import</span></button>
+    <button class="header-btn" onclick="loadDatabase()"><span>📂</span> <span>Load DB</span></button>
+    <button class="header-btn" onclick="saveDatabase()"><span>💾</span> <span>Save DB</span></button>
+    <button class="header-btn primary" onclick="exportDecisions()"><span>⬇</span> <span>Export</span></button>
+    <button class="header-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
+  </header>
+
+  <div id="body-wrap">
+    <nav id="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Navigation</div>
+        <div class="nav-item active" data-tab="overview" onclick="switchTab('overview')">
+          <span class="nav-icon">📊</span><span class="nav-label">Overview</span>
+        </div>
+        <div class="nav-item" data-tab="grammar" onclick="switchTab('grammar')">
+          <span class="nav-icon">📝</span><span class="nav-label">Grammar &amp; Punctuation</span>
+          <span class="badge" id="badge-grammar">0</span>
+        </div>
+        <div class="nav-item" data-tab="apa7" onclick="switchTab('apa7')">
+          <span class="nav-icon">📋</span><span class="nav-label">APA 7 Style</span>
+          <span class="badge" id="badge-apa7">0</span>
+        </div>
+        <div class="nav-item" data-tab="references" onclick="switchTab('references')">
+          <span class="nav-icon">🔗</span><span class="nav-label">References</span>
+          <span class="badge" id="badge-references">0</span>
+        </div>
+        <div class="nav-item" data-tab="content" onclick="switchTab('content')">
+          <span class="nav-icon">💡</span><span class="nav-label">Content &amp; Argument</span>
+          <span class="badge" id="badge-content">0</span>
+        </div>
+        <div class="nav-item" data-tab="structure" onclick="switchTab('structure')">
+          <span class="nav-icon">🏗</span><span class="nav-label">Structure &amp; Flow</span>
+          <span class="badge" id="badge-structure">0</span>
+        </div>
+        <div class="nav-item" data-tab="reports" onclick="switchTab('reports')">
+          <span class="nav-icon">📄</span><span class="nav-label">Reports</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section" style="border-top:1px solid var(--border); padding-top:14px;">
+        <div class="sidebar-label">Filters</div>
+        <div class="filter-row">
+          <label>Pass</label>
+          <div class="toggle-group">
+            <div class="toggle-opt active" data-pass="light" onclick="setPassFilter('light', this)">Light only</div>
+            <div class="toggle-opt" data-pass="all" onclick="setPassFilter('all', this)">All</div>
+          </div>
+        </div>
+        <div class="filter-row">
+          <label>Severity</label>
+          <select id="filter-severity" onchange="applyFilters()">
+            <option value="all">All severities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="filter-row">
+          <label>Status</label>
+          <select id="filter-status" onchange="applyFilters()">
+            <option value="all">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="accepted">Accepted</option>
+            <option value="denied">Denied</option>
+            <option value="modified">Modified</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sidebar-section" style="border-top:1px solid var(--border); padding-top:14px;">
+        <div class="sidebar-label">Progress</div>
+        <div class="stats-grid">
+          <div class="stat-chip accepted"><div class="num" id="stat-accepted">0</div><div class="lbl">Accepted</div></div>
+          <div class="stat-chip denied"><div class="num" id="stat-denied">0</div><div class="lbl">Denied</div></div>
+          <div class="stat-chip modified"><div class="num" id="stat-modified">0</div><div class="lbl">Modified</div></div>
+          <div class="stat-chip pending"><div class="num" id="stat-pending">0</div><div class="lbl">Pending</div></div>
+        </div>
+      </div>
+    </nav>
+
+    <main id="main">
+      <!-- ─── REPORT OVERVIEW PANEL (always visible above panels; collapsed by default) ─── -->
+      <div class="report-overview collapsed" id="report-overview">
+        <div class="report-overview-head" onclick="toggleReportOverview()">
+          <span class="ro-title">📊 Report Overview <span class="ro-version" id="ro-version">v1-original · Light Pass · 2026-05-30</span></span>
+          <span class="ro-caret" id="ro-caret">▼</span>
+        </div>
+        <div class="report-overview-body">
+          <div class="ro-chart-wrap"><canvas id="ro-radar-chart"></canvas></div>
+          <div class="score-cards-grid" id="ro-score-cards"></div>
+          <div class="critical-alert">
+            <div class="ca-title">⚠ Five Critical Issues</div>
+            <ul id="ro-critical-list">
+              <li>Loading critical issues…</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── TWO-PANEL LAYOUT: Document (left) + Cards (right) ─── -->
+      <div class="main-panels" id="main-panels">
+        <!-- LEFT: Document View -->
+        <aside class="doc-panel" id="doc-panel">
+          <div class="doc-panel-header">
+            <button class="header-btn" onclick="importAnnotatedDoc()"><span>⬆</span> <span>Load document</span></button>
+            <button class="header-btn" id="toggle-annotations-btn" onclick="toggleInlineAnnotations()" title="Show/hide Claude suggestion blocks inline in text" style="display:none">
+              <span id="annotations-icon">👁</span> <span>Annotations</span>
+            </button>
+            <span class="dph-status" id="doc-status" title="Path: ../drafts/working-v1-annotated.md">Auto-loading…</span>
+          </div>
+          <div class="doc-content" id="doc-content">
+            <div class="doc-empty">
+              <p>Loading document…</p>
+              <p style="font-size:0.8em;color:var(--text-faint);margin-top:8px">
+                Or pick manually: <code>drafts/working-v1-annotated.md</code>
+              </p>
+            </div>
+          </div>
+        </aside>
+
+        <!-- RIGHT: Feedback Cards (category tab panes live here) -->
+        <section class="cards-panel" id="cards-panel">
+      <!-- OVERVIEW TAB -->
+      <div class="tab-pane active" id="tab-overview">
+        <div class="overview-grid" id="overview-cards">
+          <div class="ov-card"><div class="big-num" id="ov-total" style="color:var(--pending)">0</div><div class="ov-label">Total Suggestions</div></div>
+          <div class="ov-card"><div class="big-num" id="ov-critical" style="color:var(--critical)">0</div><div class="ov-label">Critical Issues</div></div>
+          <div class="ov-card"><div class="big-num" id="ov-pct">0%</div><div class="ov-label">Reviewed</div></div>
+          <div class="ov-card"><div class="big-num" id="ov-score" style="color:var(--accepted)">—</div><div class="ov-label">Overall Score</div></div>
+        </div>
+
+        <!-- Tabbed card: Quality Dimensions ↔ Document Section Scores -->
+        <div class="score-view-card">
+          <div class="score-view-tabs">
+            <button class="sco-tab active" id="sco-tab-radar" onclick="switchScoreTab('radar')">Quality Dimensions</button>
+            <button class="sco-tab" id="sco-tab-sections" onclick="switchScoreTab('sections')">Document Section Scores</button>
+          </div>
+          <div id="sco-pane-radar" class="sco-pane">
+            <div class="chart-canvas-wrap">
+              <canvas id="radar-chart"></canvas>
+            </div>
+          </div>
+          <div id="sco-pane-sections" class="sco-pane" style="display:none">
+            <table class="scores-table" id="scores-table">
+              <thead><tr><th>Section</th><th>Score</th><th class="score-bar-cell">Visual</th></tr></thead>
+              <tbody id="scores-table-body"><tr><td colspan="3" style="color:var(--text-faint); text-align:center; padding:24px;">Import a report to see section scores.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Revision History — persistent context at bottom of Overview -->
+        <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:0 1px 4px var(--shadow);">
+          <div class="section-title">Revision History</div>
+          <table class="rev-table" id="rev-table">
+            <thead><tr><th>Date</th><th>Pass</th><th>Type</th><th>Score</th><th>Issues</th></tr></thead>
+            <tbody id="rev-table-body"><tr><td colspan="5" style="color:var(--text-faint); text-align:center; padding:24px;">No analysis runs yet — import a report to begin.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GRAMMAR TAB -->
+      <div class="tab-pane" id="tab-grammar">
+        <div class="tab-header">
+          <div class="tab-header-left">
+            <h2>📝 Grammar &amp; Punctuation</h2>
+            <p class="section-subtitle">Spelling, punctuation, grammar, sentence structure</p>
+          </div>
+          <div id="score-grammar" class="score-badge" style="display:none">
+            <span class="score-num">—</span><span>/ 10</span>
+          </div>
+        </div>
+        <div class="suggestions-list" id="list-grammar"></div>
+        <div class="empty-state" id="empty-grammar"><div class="empty-icon">📝</div><p>No grammar suggestions yet. Import an analysis report to get started.</p></div>
+      </div>
+
+      <!-- APA7 TAB -->
+      <div class="tab-pane" id="tab-apa7">
+        <div class="tab-header">
+          <div class="tab-header-left">
+            <h2>📋 APA 7 Style</h2>
+            <p class="section-subtitle">Citation format, in-text references, heading style, formatting</p>
+          </div>
+          <div id="score-apa7" class="score-badge" style="display:none">
+            <span class="score-num">—</span><span>/ 10</span>
+          </div>
+        </div>
+        <div class="suggestions-list" id="list-apa7"></div>
+        <div class="empty-state" id="empty-apa7"><div class="empty-icon">📋</div><p>No APA 7 suggestions yet. Import an analysis report to get started.</p></div>
+      </div>
+
+      <!-- REFERENCES TAB -->
+      <div class="tab-pane" id="tab-references">
+        <div class="tab-header">
+          <div class="tab-header-left">
+            <h2>🔗 References</h2>
+            <p class="section-subtitle">Reference list accuracy, missing citations, year consistency</p>
+          </div>
+          <div id="score-references" class="score-badge" style="display:none">
+            <span class="score-num">—</span><span>/ 10</span>
+          </div>
+        </div>
+        <div class="suggestions-list" id="list-references"></div>
+        <div class="empty-state" id="empty-references"><div class="empty-icon">🔗</div><p>No reference suggestions yet. Import an analysis report to get started.</p></div>
+      </div>
+
+      <!-- CONTENT TAB -->
+      <div class="tab-pane" id="tab-content">
+        <div class="tab-header">
+          <div class="tab-header-left">
+            <h2>💡 Content &amp; Argument</h2>
+            <p class="section-subtitle">Clarity of argument, evidence quality, analysis depth</p>
+          </div>
+          <div id="score-content" class="score-badge" style="display:none">
+            <span class="score-num">—</span><span>/ 10</span>
+          </div>
+        </div>
+        <div class="suggestions-list" id="list-content"></div>
+        <div class="empty-state" id="empty-content"><div class="empty-icon">💡</div><p>No content suggestions yet. Import an analysis report to get started.</p></div>
+      </div>
+
+      <!-- STRUCTURE TAB -->
+      <div class="tab-pane" id="tab-structure">
+        <div class="tab-header">
+          <div class="tab-header-left">
+            <h2>🏗 Structure &amp; Flow</h2>
+            <p class="section-subtitle">Document organization, section transitions, paragraph flow</p>
+          </div>
+          <div id="score-structure" class="score-badge" style="display:none">
+            <span class="score-num">—</span><span>/ 10</span>
+          </div>
+        </div>
+        <div class="suggestions-list" id="list-structure"></div>
+        <div class="empty-state" id="empty-structure"><div class="empty-icon">🏗</div><p>No structure suggestions yet. Import an analysis report to get started.</p></div>
+      </div>
+        </section><!-- /cards-panel -->
+      </div><!-- /main-panels -->
+
+      <!-- REPORTS TAB (full width, outside two-panel layout) -->
+      <div class="tab-pane" id="tab-reports">
+        <div class="tab-header">
+          <div class="tab-header-left">
+            <h2>📄 Analysis Reports</h2>
+            <p class="section-subtitle">Load the full Markdown analysis reports. Each is linked to the dissertation version below.</p>
+          </div>
+        </div>
+        <span class="report-version-badge">v1-original</span>
+        <div class="report-note" id="report-import-note" style="margin-bottom:14px;">
+          Reports auto-loaded from bundled data. Use "Load Report" to override with a newer version.
+        </div>
+        <div class="report-subtabs" id="report-subtabs">
+          <div class="report-subtab active" data-report="grammar"    onclick="switchReportSubtab('grammar', this)">Grammar</div>
+          <div class="report-subtab"        data-report="apa7"       onclick="switchReportSubtab('apa7', this)">APA 7</div>
+          <div class="report-subtab"        data-report="references"  onclick="switchReportSubtab('references', this)">References</div>
+          <div class="report-subtab"        data-report="content"     onclick="switchReportSubtab('content', this)">Content</div>
+          <div class="report-subtab"        data-report="structure"   onclick="switchReportSubtab('structure', this)">Structure</div>
+        </div>
+        <div class="report-toolbar">
+          <button class="header-btn primary" id="report-load-btn" onclick="loadReportFile(currentReportSubtab)"><span>⬆</span> <span>Load Report</span></button>
+          <span class="report-note" id="report-status">No report loaded for this section.</span>
+        </div>
+        <div class="report-render" id="report-grammar"><div class="report-empty">No Grammar report loaded. Click "Load Report" to open a .md file.</div></div>
+        <div class="report-render" id="report-apa7" style="display:none"><div class="report-empty">No APA 7 report loaded. Click "Load Report" to open a .md file.</div></div>
+        <div class="report-render" id="report-references" style="display:none"><div class="report-empty">No References report loaded. Click "Load Report" to open a .md file.</div></div>
+        <div class="report-render" id="report-content" style="display:none"><div class="report-empty">No Content report loaded. Click "Load Report" to open a .md file.</div></div>
+        <div class="report-render" id="report-structure" style="display:none"><div class="report-empty">No Structure report loaded. Click "Load Report" to open a .md file.</div></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════════════════════════════════
+let db = null;
+let SQL = null;
+let radarChart = null;
+let passFilter = 'light';
+let pendingImportData = null;
+let autoSaveTimer = null;
+// When set (array of fine-grained category strings), renderTab restricts cards to
+// those categories. null = no filter. Driven by the score-breakdown sub-rows.
+let activeCategoryFilter = null;
+
+const TAB_MAP = {
+  grammar:    { prefix: 'GRAM', label: 'Grammar & Language',     listId: 'list-grammar',    emptyId: 'empty-grammar',    badgeId: 'badge-grammar',    scoreId: 'score-grammar' },
+  apa7:       { prefix: 'APA7', label: 'APA 7 Compliance',      listId: 'list-apa7',       emptyId: 'empty-apa7',       badgeId: 'badge-apa7',       scoreId: 'score-apa7' },
+  references: { prefix: 'REF',  label: 'Reference Accuracy',    listId: 'list-references', emptyId: 'empty-references', badgeId: 'badge-references', scoreId: 'score-references' },
+  content:    { prefix: 'CONT', label: 'Content Quality',       listId: 'list-content',    emptyId: 'empty-content',    badgeId: 'badge-content',    scoreId: 'score-content' },
+  structure:  { prefix: 'STRUCT',label: 'Structure & Flow',     listId: 'list-structure',  emptyId: 'empty-structure',  badgeId: 'badge-structure',  scoreId: 'score-structure' }
+};
+
+const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+async function init() {
+  // Render the UI shell immediately — don't wait for DB
+  renderAll();
+  setupDropZone();
+  restoreReports();
+  restoreAnnotatedDoc();
+  // Apply initial panel visibility for the default (overview) tab
+  switchTab('overview');
+
+  // Load DB engine in background — non-blocking
+  try {
+    SQL = await initSqlJs({
+      locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/${f}`
+    });
+
+    // Try restoring saved session
+    // Schema version: bump this string whenever a migration changes the schema in a
+    // breaking way. Old cached DBs will be discarded and rebuilt from the bundled data.
+    const SCHEMA_VERSION = 'v6-88cards-2026-05-31';
+    const savedVersion = localStorage.getItem('lia-dissertation-db-version');
+    const saved = localStorage.getItem('lia-dissertation-db');
+    if (saved && savedVersion === SCHEMA_VERSION) {
+      try {
+        const arr = Uint8Array.from(JSON.parse(saved));
+        db = new SQL.Database(arr);
+        toast('Session restored from auto-save', 'success');
+      } catch (restoreErr) {
+        console.warn('Could not restore saved session:', restoreErr.message, '— Starting fresh.');
+        toast('Previous session could not be restored. Starting fresh.', 'error');
+        db = new SQL.Database();
+      }
+    } else {
+      if (saved && savedVersion !== SCHEMA_VERSION) {
+        // Old schema — discard silently and rebuild from bundled data.
+        // Also drop the cached annotated doc (it may hold an old Claude-review header).
+        localStorage.removeItem('lia-dissertation-db');
+        localStorage.removeItem('lia-dissertation-db-version');
+        localStorage.removeItem(ANCHOR_STORE_KEY);
+        console.info('Schema updated to', SCHEMA_VERSION, '— old cached DB + annotated doc discarded, rebuilding from bundled data.');
+      }
+      db = new SQL.Database();
+    }
+
+    initSchema();
+    await loadSampleDataIfEmpty(); // async — loads v1-feedback.json
+    seedOverviewScores();          // pre-seed 8 dimension scores if no runs exist
+    renderAll();
+    setupAutoSave();
+    // Stamp schema version so stale DBs are detected on next load
+    try { localStorage.setItem('lia-dissertation-db-version', SCHEMA_VERSION); } catch(e) {}
+
+    // Dismiss the status banner
+    const overlay = document.getElementById('loading-overlay');
+    overlay.classList.add('db-ready');
+
+  } catch (err) {
+    // DB failed — show inline error banner, keep UI usable in read-only mode
+    const overlay = document.getElementById('loading-overlay');
+    overlay.classList.add('db-error');
+    overlay.querySelector('.spinner').style.display = 'none';
+    overlay.querySelector('p').textContent =
+      '⚠ Database engine failed to load (' + err.message + '). ' +
+      'The interface is visible but decisions cannot be saved. ' +
+      'Try refreshing or check your network connection.';
+    console.error('sql.js init error:', err);
+  }
+}
+
+function initSchema() {
+  try {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS documents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      version TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS analysis_runs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      document_id INTEGER REFERENCES documents(id),
+      analysis_type TEXT NOT NULL,
+      pass_type TEXT NOT NULL CHECK(pass_type IN ('light','deep')),
+      run_date TEXT NOT NULL,
+      score INTEGER CHECK(score BETWEEN 0 AND 10),
+      summary TEXT
+    );
+    CREATE TABLE IF NOT EXISTS suggestions (
+      id TEXT PRIMARY KEY,
+      analysis_run_id INTEGER REFERENCES analysis_runs(id),
+      pass_type TEXT NOT NULL CHECK(pass_type IN ('light','deep')),
+      category TEXT NOT NULL,
+      severity TEXT NOT NULL CHECK(severity IN ('critical','high','medium','low')),
+      section TEXT,
+      line_number TEXT,
+      original_text TEXT,
+      suggested_text TEXT,
+      reason TEXT,
+      status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','accepted','denied','modified')),
+      author_text TEXT,
+      author_note TEXT,
+      reviewed_at TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS section_scores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      analysis_run_id INTEGER REFERENCES analysis_runs(id),
+      section_name TEXT NOT NULL,
+      score INTEGER CHECK(score BETWEEN 0 AND 10)
+    );
+  `);
+  // Migration: add analysis_type to suggestions if absent (users with cached DBs from earlier sessions)
+  try { db.run("ALTER TABLE suggestions ADD COLUMN analysis_type TEXT"); } catch(e) { /* already exists */ }
+  } catch (schemaErr) {
+    // This is fatal — if the schema can't be created the whole app is broken.
+    console.error('initSchema failed:', schemaErr.message);
+    const overlay = document.getElementById('loading-overlay');
+    if (overlay) {
+      overlay.classList.add('db-error');
+      overlay.querySelector('.spinner').style.display = 'none';
+      overlay.querySelector('p').textContent =
+        '⚠ Database schema error: ' + schemaErr.message +
+        '. Try refreshing the page. If this keeps happening, clear browser storage.';
+    }
+    throw schemaErr; // propagate — caller (init) must know
+  }
+}
+
+// Resolve the bundled feedback global into a parsed object.
+// window.V1_FEEDBACK_DATA may be a JSON string (current data/v1-feedback.js) or,
+// defensively, an already-parsed object. Returns null if unavailable/invalid.
+function parseFeedbackGlobal() {
+  const raw = window.V1_FEEDBACK_DATA;
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw); }
+    catch (e) { console.warn('parseFeedbackGlobal: V1_FEEDBACK_DATA is a string but not valid JSON:', e.message); return null; }
+  }
+  return null;
+}
+
+async function loadSampleDataIfEmpty() {
+  const res = db.exec("SELECT COUNT(*) as c FROM suggestions");
+  if (res.length && res[0].values[0][0] > 0) return;
+
+  // Step 1: resolve data — prefer global (works with file://), fall back to fetch.
+  // NOTE: data/v1-feedback.js assigns window.V1_FEEDBACK_DATA as a JSON *string*
+  // (a template literal), so it must be parsed before use. Earlier code treated it
+  // as an object, so data.suggestions was undefined and the loader silently fell
+  // through to the 4-item minimal fallback — the real cause of blank/sparse cards.
+  let data = parseFeedbackGlobal();
+  if (!data) {
+    try {
+      const resp = await fetch('data/v1-feedback.json');
+      if (resp.ok) {
+        data = await resp.json();
+      } else {
+        console.warn('fetch fallback: server returned', resp.status, 'for data/v1-feedback.json — using built-in minimal data.');
+      }
+    } catch(e) {
+      // Network error (file:// protocol, offline, CORS) — fall through to built-in fallback
+      console.warn('fetch fallback failed:', e.message, '— using built-in minimal data set.');
+    }
+  }
+
+  // Step 2: if we have full data, load all 60 suggestions
+  if (data && data.suggestions) {
+    db.run("INSERT OR IGNORE INTO documents(id,version,created_at) VALUES(1,?,date('now'))",
+      [data.document_version || 'v1-original']);
+
+    const typeScores = {grammar:7.5, apa7:6.0, references:4.0, content:8.0, structure:6.5};
+    const types = [...new Set(data.suggestions.map(s => s.analysis_type))];
+    const runIds = {};
+    types.forEach((t, i) => {
+      const rid = i + 1;
+      runIds[t] = rid;
+      db.run(`INSERT OR IGNORE INTO analysis_runs(id,document_id,analysis_type,pass_type,run_date,score,summary)
+        VALUES(?,1,?,'light',?,?,?)`,
+        [rid, t, data.analysis_date||'2026-05-30', Math.round(typeScores[t]||7), 'Light pass — v1-original']);
+    });
+
+    let loaded = 0;
+    for (const s of data.suggestions) {
+      try {
+        db.run(`INSERT OR IGNORE INTO suggestions
+          (id,analysis_run_id,pass_type,category,analysis_type,severity,section,line_number,original_text,suggested_text,reason,status)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?,'pending')`,
+          [s.id, runIds[s.analysis_type]||1, s.pass_type||'light',
+           s.category||s.analysis_type, s.analysis_type||'',
+           s.severity||'high', s.section||'General', s.line_number||0,
+           s.original_text||'', s.suggested_text||'', s.reason||'']);
+        loaded++;
+      } catch(e) {
+        // Expected for genuine duplicates (INSERT OR IGNORE would already handle those),
+        // but also catches constraint violations from bad data — log so schema mismatches are debuggable.
+        if (!e.message.includes('UNIQUE constraint')) {
+          console.warn('Unexpected error inserting suggestion', s.id, ':', e.message);
+        }
+      }
+    }
+
+    [['Abstract',8],['Introduction',8],['Theoretical Framework',9],
+     ['Objectives & Hypotheses',9],['Methodology',8],['Results',7],
+     ['Discussion',6],['References',4]
+    ].forEach(([sn,sc]) =>
+      db.run("INSERT OR IGNORE INTO section_scores(analysis_run_id,section_name,score) VALUES(1,?,?)",[sn,sc])
+    );
+
+    toast(`Loaded ${loaded} suggestions (v1-original light pass)`, 'success');
+    return;
+  }
+
+  // Step 3: minimal fallback if data unavailable
+  db.run("INSERT OR IGNORE INTO documents(id,version) VALUES(1,'v1-original')");
+  db.run("INSERT OR IGNORE INTO analysis_runs(id,document_id,analysis_type,pass_type,run_date,score,summary) VALUES(1,1,'content','light','2026-05-30',80,'Light pass — v1-original')");
+  // id, analysis_type, category, severity, section, line, original, suggested, reason
+  [["CONT-001","content","content","critical","Methodology",106,"EAc/EAw measures underdocumented","Document items, scale, reliability for EAc and EAw","These mediators carry the headline finding"],
+   ["APA7-001","apa7","apa7","critical","Introduction",23,"The Title of Your Paper","Delete this line entirely","APA template artifact not removed"],
+   ["REF-001","references","references","critical","References",338,"Greenberg (2021) missing","Add full APA 7 entry","Most-cited source absent from bibliography"],
+   ["STRUCT-002","structure","structure","critical","Discussion",337,"No Conclusions section","Write ~300-500 word Conclusions","Mandatory component missing"]
+  ].forEach(([id,atype,cat,sev,sec,line,orig,sugg,reason]) =>
+    db.run(`INSERT OR IGNORE INTO suggestions(id,analysis_run_id,pass_type,analysis_type,category,severity,section,line_number,original_text,suggested_text,reason)
+      VALUES(?,1,'light',?,?,?,?,?,?,?,?)`,[id,atype,cat,sev,sec,line,orig,sugg,reason])
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTO-SAVE
+// ═══════════════════════════════════════════════════════════════════════════
+function setupAutoSave() {
+  clearInterval(autoSaveTimer);
+  autoSaveTimer = setInterval(() => {
+    if (!db) return;
+    try {
+      const data = Array.from(db.export());
+      localStorage.setItem('lia-dissertation-db', JSON.stringify(data));
+      const ind = document.getElementById('autosave-indicator');
+      if (ind) { ind.textContent = '● Saved'; ind.style.color = 'var(--accepted)'; setTimeout(() => { ind.style.color = ''; }, 2000); }
+    } catch (err) {
+      // localStorage full (QuotaExceededError) or unavailable (private mode / Safari ITP)
+      const ind = document.getElementById('autosave-indicator');
+      if (ind) { ind.textContent = '⚠ Auto-save failed'; ind.style.color = 'var(--critical)'; }
+      console.warn('Auto-save failed:', err.name, err.message,
+        '— localStorage may be full or unavailable. Use "Save DB" to download a backup.');
+    }
+  }, 30000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+function renderAll() {
+  if (!db) return; // DB not yet ready — init() will call renderAll() once loaded
+  updateStats();
+  updateBadges();
+  updateProgress();
+  renderOverview();
+  renderReportOverview();
+  for (const tab of Object.keys(TAB_MAP)) renderTab(tab);
+}
+
+function query(sql, params) {
+  const res = db.exec(sql, params);
+  if (!res.length) return [];
+  const cols = res[0].columns;
+  return res[0].values.map(row => {
+    const obj = {};
+    cols.forEach((c, i) => obj[c] = row[i]);
+    return obj;
+  });
+}
+
+function queryOne(sql, params) {
+  const r = query(sql, params);
+  return r.length ? r[0] : null;
+}
+
+function updateStats() {
+  const stats = queryOne(`SELECT
+    SUM(CASE WHEN status='accepted' THEN 1 ELSE 0 END) as accepted,
+    SUM(CASE WHEN status='denied' THEN 1 ELSE 0 END) as denied,
+    SUM(CASE WHEN status='modified' THEN 1 ELSE 0 END) as modified,
+    SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) as pending,
+    COUNT(*) as total,
+    SUM(CASE WHEN severity='critical' THEN 1 ELSE 0 END) as critical
+  FROM suggestions`);
+  if (!stats) return;
+  document.getElementById('stat-accepted').textContent = stats.accepted || 0;
+  document.getElementById('stat-denied').textContent = stats.denied || 0;
+  document.getElementById('stat-modified').textContent = stats.modified || 0;
+  document.getElementById('stat-pending').textContent = stats.pending || 0;
+  document.getElementById('ov-total').textContent = stats.total || 0;
+  document.getElementById('ov-critical').textContent = stats.critical || 0;
+  const reviewed = (stats.accepted||0) + (stats.denied||0) + (stats.modified||0);
+  const pct = stats.total > 0 ? Math.round(reviewed / stats.total * 100) : 0;
+  document.getElementById('ov-pct').textContent = pct + '%';
+}
+
+function updateProgress() {
+  const stats = queryOne(`SELECT
+    SUM(CASE WHEN status != 'pending' THEN 1 ELSE 0 END) as reviewed,
+    COUNT(*) as total
+  FROM suggestions WHERE pass_type = CASE WHEN ? = 'light' THEN 'light' ELSE pass_type END`, [passFilter]);
+  if (!stats) return;
+  const rev = stats.reviewed || 0;
+  const tot = stats.total || 0;
+  document.getElementById('progress-label').textContent = `${rev} of ${tot} reviewed`;
+  document.getElementById('progress-bar-inner').style.width = tot > 0 ? (rev/tot*100) + '%' : '0%';
+}
+
+function updateBadges() {
+  for (const [tab, cfg] of Object.entries(TAB_MAP)) {
+    const passClause = passFilter === 'light' ? `AND pass_type = 'light'` : '';
+    // Tab membership is keyed on analysis_type (grammar/apa7/…); the `category` column
+    // holds fine-grained sub-categories (e.g. backslash-artifact) used by the breakdown.
+    const r = queryOne(`SELECT COUNT(*) as c FROM suggestions WHERE analysis_type = ? ${passClause}`, [tab]);
+    const el = document.getElementById(cfg.badgeId);
+    if (el) {
+      const cnt = (r && r.c) || 0;
+      el.textContent = cnt;
+      // Check for critical
+      const crit = queryOne(`SELECT COUNT(*) as c FROM suggestions WHERE analysis_type = ? AND severity = 'critical' ${passClause}`, [tab]);
+      el.className = 'badge' + ((crit && crit.c > 0) ? ' critical' : '');
+    }
+  }
+}
+
+function renderOverview() {
+  // Radar chart
+  const runs = query("SELECT ar.id, ar.run_date, ar.pass_type, ar.analysis_type, ar.score FROM analysis_runs ar ORDER BY ar.run_date, ar.id");
+
+  // Build per-run average scores for radar dimensions
+  const RADAR_DIMS = ['Grammar & Language', 'APA 7 Compliance', 'Reference Accuracy', 'Content Quality', 'Argument Strength', 'Methodology', 'Statistics', 'Structure & Flow'];
+  const ANALYSIS_DIM_MAP = {
+    grammar: 0, apa7: 1, references: 2, content: 3, content_arg: 4, methodology: 5, statistics: 6, structure: 7
+  };
+
+  // Get all unique run dates for grouping
+  const runDates = [...new Set(runs.map(r => r.run_date))];
+  const datasets = runDates.map((date, idx) => {
+    const runsForDate = runs.filter(r => r.run_date === date);
+    const scores = RADAR_DIMS.map(() => 5); // default
+    // Map analysis_type scores to dimensions
+    for (const run of runsForDate) {
+      if (run.score != null) {
+        const dimIdx = ANALYSIS_DIM_MAP[run.analysis_type];
+        if (dimIdx !== undefined) scores[dimIdx] = run.score;
+      }
+    }
+    // Also get section scores avg
+    const secScores = query("SELECT ss.section_name, ss.score FROM section_scores ss JOIN analysis_runs ar ON ss.analysis_run_id = ar.id WHERE ar.run_date = ?", [date]);
+    if (secScores.length) {
+      const avg = Math.round(secScores.reduce((a, s) => a + s.score, 0) / secScores.length);
+      // Fill any unset dimensions with avg
+      scores.forEach((s, i) => { if (s === 5) scores[i] = avg; });
+    }
+    const palette = ['#4F6BED','#16A34A','#EA580C','#7C3AED','#CA8A04','#DC2626','#2563EB','#0891B2'];
+    const color = palette[idx % palette.length];
+    const passType = runsForDate[0]?.pass_type || 'light';
+    return {
+      label: `Pass ${idx+1} (${passType}) — ${date}`,
+      data: scores,
+      borderColor: color,
+      backgroundColor: color + '22',
+      pointBackgroundColor: color,
+      borderWidth: 2,
+      pointRadius: 4
+    };
+  });
+
+  // If no real data, show a placeholder
+  if (!datasets.length) {
+    const sampleScores = query("SELECT ss.section_name, ss.score FROM section_scores ss");
+    if (sampleScores.length) {
+      const avg = sampleScores.reduce((a,s) => a + s.score, 0) / sampleScores.length;
+      const scores = [avg, avg, avg, 8, 8, 8, 7, 8];
+      datasets.push({
+        label: 'Current State — 2026-05-30',
+        data: scores,
+        borderColor: '#4F6BED',
+        backgroundColor: '#4F6BED22',
+        pointBackgroundColor: '#4F6BED',
+        borderWidth: 2, pointRadius: 4
+      });
+      document.getElementById('ov-score').textContent = avg.toFixed(1);
+    }
+  } else {
+    // Compute overall score
+    const last = datasets[datasets.length - 1];
+    const avg = last.data.reduce((a,b)=>a+b,0) / last.data.length;
+    document.getElementById('ov-score').textContent = avg.toFixed(1);
+  }
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const labelColor = isDark ? '#8A93B0' : '#5A6070';
+
+  if (radarChart) { radarChart.destroy(); radarChart = null; }
+  const ctx = document.getElementById('radar-chart').getContext('2d');
+  radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: { labels: RADAR_DIMS, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: 10, ticks: { stepSize: 2, color: labelColor, backdropColor: 'transparent', font: { size: 10 } },
+          grid: { color: gridColor },
+          angleLines: { color: gridColor },
+          pointLabels: { color: labelColor, font: { size: 11 } }
+        }
+      },
+      plugins: { legend: { labels: { color: labelColor, font: { size: 11 }, boxWidth: 12 } } }
+    }
+  });
+
+  // Revision history table
+  const tbody = document.getElementById('rev-table-body');
+  if (runs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--text-faint); text-align:center; padding:24px;">No analysis runs yet — import a report to begin.</td></tr>`;
+  } else {
+    const runGroups = {};
+    for (const r of runs) {
+      const key = r.run_date + '_' + r.pass_type;
+      if (!runGroups[key]) runGroups[key] = { date: r.run_date, pass: r.pass_type, types: [], scores: [] };
+      runGroups[key].types.push(r.analysis_type);
+      if (r.score != null) runGroups[key].scores.push(r.score);
+    }
+    tbody.innerHTML = safeHTML(Object.values(runGroups).map(g => {
+      const avgScore = g.scores.length ? (g.scores.reduce((a,b)=>a+b,0)/g.scores.length).toFixed(1) : '—';
+      const issueCount = queryOne(`SELECT COUNT(*) as c FROM suggestions s JOIN analysis_runs ar ON s.analysis_run_id = ar.id WHERE ar.run_date = ?`, [g.date]);
+      return `<tr>
+        <td>${esc(g.date)}</td>
+        <td><span style="text-transform:capitalize">${esc(g.pass)}</span></td>
+        <td>${esc(g.types.join(', '))}</td>
+        <td>${esc(String(avgScore))}/10</td>
+        <td>${(issueCount && issueCount.c) || 0}</td>
+      </tr>`;
+    }).join(''));
+  }
+
+  // Section scores table
+  const secScores = query(`SELECT ss.section_name, AVG(ss.score) as avg_score FROM section_scores ss GROUP BY ss.section_name ORDER BY avg_score DESC`);
+  const stbody = document.getElementById('scores-table-body');
+  if (!secScores.length) {
+    stbody.innerHTML = `<tr><td colspan="3" style="color:var(--text-faint); text-align:center; padding:24px;">Import a report to see section scores.</td></tr>`;
+  } else {
+    stbody.innerHTML = secScores.map(s => {
+      const score = Math.round(s.avg_score);
+      const pct = (score / 10 * 100) + '%';
+      const color = score >= 8 ? 'var(--accepted)' : score >= 6 ? 'var(--pending)' : 'var(--high)';
+      return `<tr>
+        <td>${esc(s.section_name)}</td>
+        <td><strong>${score}/10</strong></td>
+        <td class="score-bar-cell"><div class="score-bar" style="width:${pct}; background:${color}"></div></td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+function renderTab(tab) {
+  const cfg = TAB_MAP[tab];
+  const passClause = passFilter === 'light' ? `AND s.pass_type = 'light'` : '';
+  const sevFilter = document.getElementById('filter-severity').value;
+  const statusFilter = document.getElementById('filter-status').value;
+  const sevClause = sevFilter !== 'all' ? `AND s.severity = '${sevFilter}'` : '';
+  const statusClause = statusFilter !== 'all' ? `AND s.status = '${statusFilter}'` : '';
+
+  // When a breakdown sub-component is clicked, activeCategoryFilter holds an array of
+  // fine-grained category strings; restrict this tab's cards to those categories.
+  const params = [tab];
+  let catClause = '';
+  if (Array.isArray(activeCategoryFilter) && activeCategoryFilter.length) {
+    catClause = `AND s.category IN (${activeCategoryFilter.map(() => '?').join(',')})`;
+    params.push(...activeCategoryFilter);
+  }
+
+  const suggestions = query(`
+    SELECT s.* FROM suggestions s
+    WHERE s.analysis_type = ?
+    ${catClause} ${passClause} ${sevClause} ${statusClause}
+    ORDER BY
+      CASE s.severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END,
+      s.created_at
+  `, params);
+
+  // Show / hide the "filter active" bar in the cards panel
+  renderFilterBar();
+
+  const listEl = document.getElementById(cfg.listId);
+  const emptyEl = document.getElementById(cfg.emptyId);
+
+  if (!suggestions.length) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  listEl.innerHTML = safeHTML(suggestions.map(s => renderCard(s)).join(''));
+
+  // Count for pass breakdown
+  const lightCount = query(`SELECT COUNT(*) as c FROM suggestions WHERE analysis_type=? AND pass_type='light'`, [tab]);
+  const deepCount  = query(`SELECT COUNT(*) as c FROM suggestions WHERE analysis_type=? AND pass_type='deep'`,  [tab]);
+  const scoreEl = document.getElementById(cfg.scoreId);
+  if (scoreEl) {
+    const run = queryOne(`SELECT ar.score FROM analysis_runs ar WHERE ar.analysis_type = ? ORDER BY ar.run_date DESC LIMIT 1`, [tab]);
+    if (run && run.score) {
+      scoreEl.style.display = 'flex';
+      scoreEl.innerHTML = safeHTML(`<span class="score-num">${run.score}</span><span>/ 10</span>
+        <span class="pass-breakdown">${(lightCount[0]&&lightCount[0].c)||0} light | ${(deepCount[0]&&deepCount[0].c)||0} deep</span>`);
+    }
+  }
+}
+
+function renderCard(s) {
+  const sevClass = `sev-${s.severity}`;
+  const passClass = s.pass_type === 'deep' ? 'pass-deep' : '';
+  const statusClass = s.status !== 'pending' ? `status-${s.status}` : '';
+  const passDeepBadge = s.pass_type === 'deep' ? `<span class="sug-pass-badge deep">deep</span>` : `<span class="sug-pass-badge">light</span>`;
+
+  const statusBadge = s.status !== 'pending'
+    ? `<span class="sug-status-badge ${s.status}">${s.status === 'accepted' ? '✓ Accepted' : s.status === 'denied' ? '✗ Denied' : '✎ Modified'}</span>`
+    : '';
+
+  const origBlock = s.original_text
+    ? `<div class="text-block-label">Original</div><div class="text-block text-original">${esc(s.original_text)}</div>`
+    : '';
+  const suggBlock = s.suggested_text
+    ? `<div class="text-block-label">Suggested</div><div class="text-block text-suggested">${esc(s.suggested_text)}</div>`
+    : '';
+  const reasonBlock = s.reason
+    ? `<div class="reason-text"><strong>Why:</strong> ${esc(s.reason)}</div>`
+    : '';
+
+  const authorTextBlock = s.author_text
+    ? `<div class="text-block-label">Your version</div><div class="text-block" style="border-color:var(--modified); background:#F5F3FF">${esc(s.author_text)}</div>`
+    : '';
+  const authorNoteBlock = s.author_note
+    ? `<div style="font-size:0.78rem; color:var(--text-muted); margin-top:6px;"><em>Note: ${esc(s.author_note)}</em></div>`
+    : '';
+
+  // Always show meaningful content — if every field is empty (e.g. DB still loading
+  // or a data gap) show a fallback message instead of a blank card body.
+  const contentArea = (origBlock || suggBlock || reasonBlock || authorTextBlock || authorNoteBlock)
+    ? `${origBlock}${suggBlock}${authorTextBlock}${authorNoteBlock}${reasonBlock}`
+    : `<div class="reason-text" style="color:var(--text-faint);font-style:italic">No detail available — import the feedback .md report for full content.</div>`;
+
+  // Section + line: show actual values; flag unpopulated defaults (General / line 0) in a muted style
+  const hasRealSection = s.section && s.section !== 'General';
+  const hasRealLine = s.line_number && String(s.line_number) !== '0';
+  const sectionTxt = esc(s.section || s.category || '—');
+  const lineTxt = hasRealLine ? ' · Line ' + esc(s.line_number) : (s.line_number ? '' : ' · Line —');
+  const metaStyle = (hasRealSection || hasRealLine) ? '' : ' style="color:var(--text-faint)"';
+
+  const actionButtons = s.status === 'pending' ? `
+    <button class="action-btn accept" onclick="acceptSuggestion('${s.id}')">✓ Accept</button>
+    <button class="action-btn deny"   onclick="openDenyEditor('${s.id}')">✗ Deny</button>
+    <button class="action-btn modify" onclick="openModifyEditor('${s.id}')">✎ Modify…</button>
+  ` : `
+    <button class="action-btn undo" onclick="undoDecision('${s.id}')">↩ Undo</button>
+  `;
+
+  return `
+  <div class="sug-card ${passClass} ${statusClass}" id="card-${s.id}" tabindex="0"
+       onkeydown="handleCardKey(event, '${s.id}')">
+    <div class="sug-header">
+      <span class="sug-id">${esc(s.id)}</span>
+      ${passDeepBadge}
+      <span class="${sevClass} sev-badge"><span class="sev-dot"></span>${capitalize(s.severity)}</span>
+      <span class="sug-category"${metaStyle}>${sectionTxt}${lineTxt}</span>
+      ${statusBadge}
+    </div>
+    <div class="sug-body">
+      ${contentArea}
+    </div>
+    <div class="sug-actions" id="actions-${s.id}">${actionButtons}</div>
+    <div id="editor-${s.id}" style="display:none"></div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SUGGESTION ACTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+function acceptSuggestion(id) {
+  if (!db) { toast('Database not ready. Please wait for it to load.', 'error'); return; }
+  try {
+    db.run(`UPDATE suggestions SET status='accepted', reviewed_at=datetime('now') WHERE id=?`, [id]);
+  } catch (err) {
+    toast('Could not save decision: ' + err.message, 'error');
+    console.error('acceptSuggestion db.run failed for', id, err);
+    return;
+  }
+  persistAndRefresh(id);
+  toast('Suggestion accepted ✓', 'success');
+}
+
+function openDenyEditor(id) {
+  const editorEl = document.getElementById(`editor-${id}`);
+  editorEl.style.display = 'block';
+  editorEl.innerHTML = safeHTML(`
+    <div class="deny-note-editor">
+      <div class="editor-label">Optional note (why are you declining this suggestion?)</div>
+      <textarea id="deny-note-${esc(id)}" placeholder="e.g. Not applicable to this section…" rows="2"></textarea>
+      <div class="editor-actions">
+        <button class="editor-btn save" onclick="confirmDeny('${esc(id)}')">✗ Confirm Deny</button>
+        <button class="editor-btn cancel" onclick="closeEditor('${esc(id)}')">Cancel</button>
+      </div>
+    </div>`);
+  setTimeout(() => document.getElementById(`deny-note-${id}`)?.focus(), 50);
+}
+
+function confirmDeny(id) {
+  if (!db) { toast('Database not ready. Please wait for it to load.', 'error'); return; }
+  const note = document.getElementById(`deny-note-${id}`)?.value || '';
+  try {
+    db.run(`UPDATE suggestions SET status='denied', author_note=?, reviewed_at=datetime('now') WHERE id=?`, [note || null, id]);
+  } catch (err) {
+    toast('Could not save decision: ' + err.message, 'error');
+    console.error('confirmDeny db.run failed for', id, err);
+    return;
+  }
+  persistAndRefresh(id);
+  toast('Suggestion denied', '');
+}
+
+function openModifyEditor(id) {
+  const sug = queryOne("SELECT * FROM suggestions WHERE id=?", [id]);
+  const editorEl = document.getElementById(`editor-${id}`);
+  editorEl.style.display = 'block';
+  editorEl.innerHTML = safeHTML(`
+    <div class="modify-editor">
+      <div class="editor-label">Your version (edit as needed)</div>
+      <textarea id="modify-text-${esc(id)}">${esc(sug.suggested_text || '')}</textarea>
+      <div class="editor-label" style="margin-top:8px">Optional note</div>
+      <textarea id="modify-note-${esc(id)}" rows="1" placeholder="Add a note…"></textarea>
+      <div class="editor-actions">
+        <button class="editor-btn save" onclick="confirmModify('${esc(id)}')">✎ Save Modification</button>
+        <button class="editor-btn cancel" onclick="closeEditor('${esc(id)}')">Cancel</button>
+      </div>
+    </div>`);
+  setTimeout(() => { const ta = document.getElementById(`modify-text-${id}`); if(ta) { ta.focus(); ta.select(); } }, 50);
+}
+
+function confirmModify(id) {
+  if (!db) { toast('Database not ready. Please wait for it to load.', 'error'); return; }
+  const text = document.getElementById(`modify-text-${id}`)?.value || '';
+  const note = document.getElementById(`modify-note-${id}`)?.value || '';
+  try {
+    db.run(`UPDATE suggestions SET status='modified', author_text=?, author_note=?, reviewed_at=datetime('now') WHERE id=?`,
+      [text || null, note || null, id]);
+  } catch (err) {
+    toast('Could not save modification: ' + err.message, 'error');
+    console.error('confirmModify db.run failed for', id, err);
+    return;
+  }
+  persistAndRefresh(id);
+  toast('Modification saved ✎', 'success');
+}
+
+function undoDecision(id) {
+  if (!db) { toast('Database not ready. Please wait for it to load.', 'error'); return; }
+  try {
+    db.run(`UPDATE suggestions SET status='pending', author_text=NULL, author_note=NULL, reviewed_at=NULL WHERE id=?`, [id]);
+  } catch (err) {
+    toast('Could not undo decision: ' + err.message, 'error');
+    console.error('undoDecision db.run failed for', id, err);
+    return;
+  }
+  persistAndRefresh(id);
+  toast('Decision undone', '');
+}
+
+function closeEditor(id) {
+  const el = document.getElementById(`editor-${id}`);
+  if (el) el.style.display = 'none';
+}
+
+function persistAndRefresh(changedId) {
+  autoSaveNow();
+  // Re-render only the card to avoid full list rebuild (performance)
+  const sug = queryOne("SELECT * FROM suggestions WHERE id=?", [changedId]);
+  if (sug) {
+    const cardEl = document.getElementById(`card-${changedId}`);
+    if (cardEl) {
+      const newCard = document.createElement('div');
+      newCard.innerHTML = safeHTML(renderCard(sug));
+      cardEl.replaceWith(newCard.firstElementChild);
+    }
+  }
+  updateStats();
+  updateProgress();
+  updateBadges();
+}
+
+function autoSaveNow() {
+  if (!db) return;
+  try {
+    const data = Array.from(db.export());
+    localStorage.setItem('lia-dissertation-db', JSON.stringify(data));
+  } catch (err) {
+    // localStorage full or unavailable — surface visibly so Lia knows the decision was NOT saved
+    console.warn('autoSaveNow failed:', err.name, err.message);
+    const ind = document.getElementById('autosave-indicator');
+    if (ind) { ind.textContent = '⚠ Not saved'; ind.style.color = 'var(--critical)'; }
+    toast('Warning: decision could not be saved to browser storage. Use "Save DB" to download a backup.', 'error');
+  }
+}
+
+function handleCardKey(event, id) {
+  if (event.target.tagName === 'TEXTAREA' || event.target.tagName === 'BUTTON') return;
+  const sug = queryOne("SELECT status FROM suggestions WHERE id=?", [id]);
+  if (!sug || sug.status !== 'pending') return;
+  if (event.key === 'a' || event.key === 'A') { event.preventDefault(); acceptSuggestion(id); }
+  if (event.key === 'd' || event.key === 'D') { event.preventDefault(); openDenyEditor(id); }
+  if (event.key === 'm' || event.key === 'M') { event.preventDefault(); openModifyEditor(id); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REPORT OVERVIEW PANEL (collapsible, above two-panel area)
+// ═══════════════════════════════════════════════════════════════════════════
+let roRadarChart = null;
+
+// Fixed scores per the v1-original light pass.
+// tab: which feedback tab to open when this score is clicked.
+// Dimensions without a dedicated tab map to the most relevant one.
+const RO_SCORES = [
+  { key: 'grammar',     label: 'Grammar',     score: 6.0, tab: 'grammar'    },
+  { key: 'apa7',        label: 'APA 7',       score: 4.0, tab: 'apa7'       },
+  { key: 'references',  label: 'References',  score: 2.0, tab: 'references' },
+  { key: 'content',     label: 'Content',     score: 8.0, tab: 'content'    },
+  { key: 'argument',    label: 'Argument',    score: 7.5, tab: 'content'    }, // in content report
+  { key: 'methodology', label: 'Methodology', score: 8.0, tab: 'content'    }, // in content report
+  { key: 'statistics',  label: 'Statistics',  score: 5.0, tab: 'apa7'       }, // stats reporting in APA7
+  { key: 'structure',   label: 'Structure',   score: 4.0, tab: 'structure'  }
+];
+
+// Allow V1_FEEDBACK_DATA to override scores (rubric-corrected at data layer).
+// The global is a JSON string, so parse it via parseFeedbackGlobal() before reading .scores.
+(function applyDataScores() {
+  const fb = parseFeedbackGlobal();
+  if (fb && fb.scores) {
+    const s = fb.scores;
+    RO_SCORES.forEach(r => { if (s[r.key] != null) r.score = s[r.key]; });
+  }
+})();
+
+// Maps each dimension (tab) to its sub-components.
+//   categories: values of suggestions.category that belong to this sub-component
+//   autoDeduct: fixed rubric point deductions (always <= 0)
+const RUBRIC_BREAKDOWN = {
+  grammar: [
+    { label: 'Diacritics',          categories: ['diacritics'],                          autoDeduct: 0  },
+    { label: 'Backslash artifacts', categories: ['backslash-artifact'],                   autoDeduct: -1 },
+    { label: 'Grammar errors',      categories: ['grammar', 'sentence-structure'],        autoDeduct: 0  },
+    { label: 'Punctuation',         categories: ['punctuation'],                          autoDeduct: 0  },
+    { label: 'Register & style',    categories: ['register', 'sentence-length'],          autoDeduct: 0  },
+  ],
+  apa7: [
+    { label: 'Template artifacts',  categories: ['template-artifact'],                    autoDeduct: -2 },
+    { label: 'Citation format',     categories: ['citation-format', 'citation-format / reference-list'], autoDeduct: 0 },
+    { label: 'Statistics format',   categories: ['statistics', 'statistics / numbers', 'statistics (typo affecting reporting)'], autoDeduct: -1 },
+    { label: 'Reference list',      categories: ['reference-list'],                       autoDeduct: 0  },
+    { label: 'Headings & numbers',  categories: ['heading', 'numbers', 'table', 'table / figure', 'figure'], autoDeduct: 0 },
+    { label: 'Backslash artifacts', categories: ['backslash-artifact'],                   autoDeduct: -1 },
+  ],
+  references: [
+    { label: 'Missing citations',    categories: ['orphan-citation'],                     autoDeduct: -1 },
+    { label: 'Missing references',   categories: ['orphan-reference'],                    autoDeduct: -1 },
+    { label: 'Year/name mismatches', categories: ['year-mismatch', 'name-mismatch'],      autoDeduct: 0  },
+    { label: 'Format errors',        categories: ['format-error', 'format-inconsistency'], autoDeduct: 0 },
+  ],
+  content: [
+    { label: 'Thesis & contribution', categories: ['content'],                            autoDeduct: 0  },
+    { label: 'Evidence & argument',   categories: ['content'],                            autoDeduct: 0  },
+    { label: 'Methodology gaps',      categories: ['methodology'],                        autoDeduct: 0  },
+  ],
+  structure: [
+    { label: 'Required sections',   categories: ['structure'],                            autoDeduct: -2 },
+    { label: 'Proportionality',     categories: ['structure'],                            autoDeduct: 0  },
+    { label: 'Transitions & flow',  categories: ['structure'],                            autoDeduct: 0  },
+  ],
+};
+
+const RO_CRITICAL_ISSUES = [
+  'Methodology — EAc/EAw mediator measures underdocumented (items, scale, reliability missing).',
+  'APA 7 — "The Title of Your Paper" template artifact not removed from the Introduction.',
+  'References — Greenberg (2021), the most-cited source, is absent from the bibliography.',
+  'Structure — No Conclusions section; a mandatory ~300-500 word component is missing.',
+  'Statistics — Reported analyses lack effect sizes and confidence intervals.'
+];
+
+function scoreClass(s) { return s >= 8 ? 'good' : s >= 6 ? 'mid' : s >= 4.5 ? 'poor' : 'bad'; }
+
+// Compute a 0–10 sub-score for a set of fine-grained categories.
+// Start at 10; deduct per unresolved (status != 'accepted') critical/high finding,
+// then apply the fixed rubric autoDeduct. Returns null if DB not ready.
+function computeSubScore(categories, autoDeduct) {
+  if (!db) return null;
+  if (!categories || !categories.length) return Math.max(0, Math.min(10, 10 + (autoDeduct || 0)));
+  const placeholders = categories.map(() => '?').join(',');
+  const row = queryOne(
+    `SELECT
+       SUM(CASE WHEN severity='critical' THEN 1 ELSE 0 END) as crit,
+       SUM(CASE WHEN severity='high' THEN 1 ELSE 0 END) as hi,
+       COUNT(*) as total
+     FROM suggestions
+     WHERE category IN (${placeholders}) AND status != 'accepted'`,
+    categories
+  );
+  if (!row) return 10;
+  let score = 10;
+  score -= (row.crit || 0) * 2;
+  score -= (row.hi || 0) * 0.5;
+  score += (autoDeduct || 0);
+  return Math.max(0, Math.min(10, Math.round(score * 10) / 10));
+}
+
+function subScoreDotClass(v) {
+  if (v == null) return 'mid';
+  return v >= 8 ? 'good' : v >= 6 ? 'mid' : v >= 4 ? 'poor' : 'bad';
+}
+
+// Build the breakdown HTML for one dimension (tab). Computed lazily — only called
+// when a card is first expanded — so we never run 8×5 sub-queries on every render.
+function buildBreakdownHtml(tab) {
+  const comps = RUBRIC_BREAKDOWN[tab];
+  if (!comps) return '<div class="breakdown-row"><span class="br-label" style="color:var(--text-faint)">No breakdown for this dimension.</span></div>';
+  return comps.map(c => {
+    const v = computeSubScore(c.categories, c.autoDeduct);
+    const vTxt = v == null ? '—' : v.toFixed(0);
+    const cats = esc(JSON.stringify(c.categories));
+    return `<div class="breakdown-row" onclick='event.stopPropagation(); filterByCategory(${cats}, "${tab}")' title="Click to filter the ${esc(tab)} tab to: ${esc(c.categories.join(', '))}">
+      <span class="breakdown-dot ${subScoreDotClass(v)}"></span>
+      <span class="br-label">${esc(c.label)}</span>
+      <span class="br-score">${vTxt}/10</span>
+    </div>`;
+  }).join('');
+}
+
+// Toggle the expandable breakdown under a score card AND navigate to its tab.
+function toggleScoreCard(wrapId, tab) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  const willExpand = !wrap.classList.contains('expanded');
+  // Lazily populate the breakdown the first time it expands
+  if (willExpand && wrap.dataset.loaded !== '1') {
+    const bd = wrap.querySelector('.score-breakdown');
+    if (bd) { bd.innerHTML = safeHTML(buildBreakdownHtml(tab)); wrap.dataset.loaded = '1'; }
+  }
+  wrap.classList.toggle('expanded', willExpand);
+  // Navigate to the relevant tab (preserves existing click-to-tab behaviour)
+  switchTab(tab);
+  scrollDocToFirstSuggestion(tab);
+}
+
+// Filter the cards on `tab` to a set of fine-grained categories.
+// switchTab clears any prior filter, so set ours after switching, then re-render.
+function filterByCategory(categories, tab) {
+  switchTab(tab);
+  activeCategoryFilter = Array.isArray(categories) ? categories : [categories];
+  renderTab(tab);
+}
+
+// Clear the active category filter and re-render the current tab.
+function clearCategoryFilter() {
+  activeCategoryFilter = null;
+  if (CARD_TABS.includes(currentTab)) renderTab(currentTab);
+  renderFilterBar();
+}
+
+// Show/refresh the "filter active" bar at the top of the cards panel.
+function renderFilterBar() {
+  const panel = document.getElementById('cards-panel');
+  if (!panel) return;
+  let bar = document.getElementById('filter-active-bar');
+  if (!activeCategoryFilter || !activeCategoryFilter.length) {
+    if (bar) bar.remove();
+    return;
+  }
+  const labelTxt = 'Filtered to: ' + activeCategoryFilter.join(', ');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'filter-active-bar';
+    bar.className = 'filter-active-bar';
+    panel.insertBefore(bar, panel.firstChild);
+  }
+  bar.innerHTML = safeHTML(`<span>${esc(labelTxt)}</span><button class="editor-btn cancel" style="padding:2px 10px" onclick="clearCategoryFilter()">Clear filter</button>`);
+}
+
+function renderReportOverview() {
+  // Score cards — each is clickable and navigates to the relevant feedback tab
+  const cardsEl = document.getElementById('ro-score-cards');
+  if (cardsEl) {
+    cardsEl.innerHTML = safeHTML(RO_SCORES.map((s, idx) => {
+      // Count pending suggestions for this dimension (only when DB is ready)
+      let countHtml = '';
+      if (db) {
+        // Keys that map to a tab may share it (argument/methodology → content, statistics → apa7)
+        const types = RO_SCORES.filter(r => r.tab === s.tab).map(r => r.key);
+        const placeholders = types.map(() => '?').join(',');
+        const row = queryOne(
+          `SELECT COUNT(*) as c FROM suggestions WHERE analysis_type IN (${placeholders}) AND status='pending'`,
+          types
+        );
+        const n = row ? row.c : 0;
+        countHtml = n > 0
+          ? `<div class="sc-count">${n} pending</div>`
+          : `<div class="sc-count" style="color:var(--accepted)">✓ reviewed</div>`;
+      }
+      const tabLabel = s.tab === 'content' && s.key !== 'content'
+        ? `→ Content tab`
+        : s.tab === 'apa7' && s.key === 'statistics'
+          ? `→ APA 7 tab`
+          : `→ ${s.label} tab`;
+      const hasBreakdown = !!RUBRIC_BREAKDOWN[s.tab];
+      const wrapId = `score-card-wrap-${idx}`;
+      const chevron = hasBreakdown ? `<div class="sc-nav" style="opacity:1">▾ details</div>` : '';
+      const onClick = hasBreakdown
+        ? `toggleScoreCard('${wrapId}', '${s.tab}')`
+        : `switchTab('${s.tab}')`;
+      const breakdownEl = hasBreakdown ? `<div class="score-breakdown"></div>` : '';
+      return `<div class="score-card-wrap" id="${wrapId}">
+        <div class="score-card ${scoreClass(s.score)}" onclick="${onClick}" title="Click to view ${esc(s.label)} suggestions${hasBreakdown ? ' and toggle the score breakdown' : ''}">
+          <div class="sc-num">${s.score.toFixed(1)}</div>
+          <div class="sc-lbl">${esc(s.label)}</div>
+          ${countHtml}
+          <div class="sc-nav">${esc(tabLabel)}</div>
+          ${chevron}
+        </div>
+        ${breakdownEl}
+      </div>`;
+    }).join(''));
+  }
+
+  // Critical issues list
+  const critEl = document.getElementById('ro-critical-list');
+  if (critEl) critEl.innerHTML = safeHTML(RO_CRITICAL_ISSUES.map(c => `<li>${esc(c)}</li>`).join(''));
+
+  // Radar chart (own canvas, independent of the legacy overview-tab chart)
+  const canvas = document.getElementById('ro-radar-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const labelColor = isDark ? '#8A93B0' : '#5A6070';
+  if (roRadarChart) { roRadarChart.destroy(); roRadarChart = null; }
+  roRadarChart = new Chart(canvas.getContext('2d'), {
+    type: 'radar',
+    data: {
+      labels: RO_SCORES.map(s => s.label),
+      datasets: [{
+        label: 'v1-original · Light Pass',
+        data: RO_SCORES.map(s => s.score),
+        borderColor: '#4F6BED', backgroundColor: '#4F6BED22',
+        pointBackgroundColor: '#4F6BED', borderWidth: 2, pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { r: {
+        min: 0, max: 10, ticks: { stepSize: 2, color: labelColor, backdropColor: 'transparent', font: { size: 10 } },
+        grid: { color: gridColor }, angleLines: { color: gridColor }, pointLabels: { color: labelColor, font: { size: 11 } }
+      } },
+      plugins: { legend: { labels: { color: labelColor, font: { size: 11 }, boxWidth: 12 } } }
+    }
+  });
+}
+
+// Pre-seed the eight dimension scores into analysis_runs if not already present.
+function seedOverviewScores() {
+  if (!db) return;
+  try {
+    const have = queryOne("SELECT COUNT(*) as c FROM analysis_runs");
+    if (have && have.c > 0) return; // already seeded by loadSampleDataIfEmpty or import
+    db.run("INSERT OR IGNORE INTO documents(id,version,created_at) VALUES(1,'v1-original',date('now'))");
+    RO_SCORES.forEach((s, i) => {
+      db.run(`INSERT OR IGNORE INTO analysis_runs(id,document_id,analysis_type,pass_type,run_date,score,summary)
+        VALUES(?,1,?,'light','2026-05-30',?,?)`,
+        [100 + i, s.key, Math.round(s.score), 'Seeded overview score — v1-original light pass']);
+    });
+  } catch (e) { /* non-fatal */ }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DOCUMENT PANEL — annotated dissertation + clickable anchors
+// ═══════════════════════════════════════════════════════════════════════════
+const ANCHOR_STORE_KEY = 'lia-annotated-doc-v1';
+
+function importAnnotatedDoc() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.md,.markdown,.txt';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const text = ev.target.result;
+      if (!text || !text.trim()) {
+        toast('The selected file appears to be empty.', 'error');
+        return;
+      }
+      try {
+        localStorage.setItem(ANCHOR_STORE_KEY, text);
+      } catch (storageErr) {
+        // Quota exceeded — the document still renders in this session, but warn that it won't persist
+        console.warn('Could not persist annotated doc to localStorage:', storageErr.message);
+        toast('Document loaded but could not be saved to browser storage (storage may be full). It will be lost on refresh.', 'error');
+      }
+      renderAnnotatedDoc(text, file.name);
+      document.getElementById('toggle-annotations-btn').style.display = '';
+      toast('Annotated dissertation loaded', 'success');
+    };
+    reader.onerror = () => {
+      toast('Failed to read file "' + file.name + '". The file may be unreadable or not valid UTF-8 text.', 'error');
+      console.error('FileReader error reading', file.name, reader.error);
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+  input.click();
+}
+
+function renderAnnotatedDoc(mdText, filename) {
+  const contentEl = document.getElementById('doc-content');
+  const statusEl = document.getElementById('doc-status');
+  if (!contentEl) return;
+
+  let html;
+  try {
+    html = marked.parse(mdText);
+  } catch (parseErr) {
+    contentEl.innerHTML = '<p style="color:var(--critical);padding:16px;">Failed to render document: ' + esc(parseErr.message) + '</p>';
+    console.error('marked.parse failed in renderAnnotatedDoc:', parseErr);
+    return;
+  }
+
+  // 1 & 2: replace [⚡XXXX-NNN] and [🔸XXXX-NNN] anchor tokens with clickable spans.
+  // marked may HTML-escape the brackets; the emoji + ID survive intact, so match on those.
+  html = html.replace(/\[?⚡\s*([A-Z0-9]+-\d+)\]?/g,
+    (_, id) => `<span class="anchor anchor-critical" data-id="${id}" title="Click: ${id}">⚡</span>`);
+  html = html.replace(/\[?🔸\s*([A-Z0-9]+-\d+)\]?/g,
+    (_, id) => `<span class="anchor anchor-high" data-id="${id}" title="Click: ${id}">🔸</span>`);
+
+  // Sanitize, allowing our data-id attribute through.
+  const clean = (typeof DOMPurify !== 'undefined')
+    ? DOMPurify.sanitize(html, { ADD_ATTR: ['data-id', 'title'] })
+    : html;
+  contentEl.innerHTML = clean;
+
+  // 3: flag Claude suggestion blockquotes.
+  contentEl.querySelectorAll('blockquote').forEach(bq => {
+    const t = bq.textContent || '';
+    const h = bq.innerHTML || '';
+    if (t.trimStart().startsWith('---') || h.includes('[⚡') || h.includes('[🔸') ||
+        h.includes('⚡') || h.includes('🔸') || /\*\*\[?[⚡🔸]/.test(h)) {
+      bq.classList.add('claude-suggestion-block');
+    }
+  });
+
+  // Wire anchor clicks → focus the matching card.
+  contentEl.querySelectorAll('.anchor[data-id]').forEach(a => {
+    a.addEventListener('click', () => {
+      contentEl.querySelectorAll('.anchor-active').forEach(x => x.classList.remove('anchor-active'));
+      a.classList.add('anchor-active');
+      focusSuggestion(a.dataset.id);
+    });
+  });
+
+  if (statusEl) statusEl.textContent = filename || 'Document loaded';
+}
+
+// Scroll the left doc panel to the anchor for a given suggestion id and pulse it.
+function scrollToAnchor(id) {
+  const contentEl = document.getElementById('doc-content');
+  if (!contentEl) return;
+  const a = contentEl.querySelector(`.anchor[data-id="${CSS.escape(id)}"]`);
+  if (!a) return;
+  a.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  a.classList.remove('anchor-pulse');
+  void a.offsetWidth; // restart animation
+  a.classList.add('anchor-pulse');
+  setTimeout(() => a.classList.remove('anchor-pulse'), 1600);
+}
+
+function scrollDocToSection(sectionName) {
+  const content = document.getElementById('doc-content');
+  if (!content || !sectionName) return;
+  const lower = sectionName.toLowerCase();
+  for (const h of content.querySelectorAll('h1,h2,h3,h4')) {
+    if (h.textContent.toLowerCase().includes(lower)) {
+      h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+  }
+}
+
+function scrollDocToFirstSuggestion(tab) {
+  if (!db) return;
+  const sug = queryOne(
+    `SELECT id, section FROM suggestions WHERE analysis_type=? AND status='pending'
+     ORDER BY CASE severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1 ELSE 2 END LIMIT 1`,
+    [tab]
+  );
+  if (!sug) return;
+  const content = document.getElementById('doc-content');
+  if (content && content.classList.contains('show-inline-annotations')) {
+    scrollToAnchor(sug.id);
+  } else if (sug.section) {
+    scrollDocToSection(sug.section);
+  }
+}
+
+// Scroll the right cards panel to a suggestion card, switching to its tab, and focus it.
+function focusSuggestion(id) {
+  // Determine the tab from the suggestion's category (fall back to ID prefix).
+  let tab = null;
+  const row = db ? queryOne("SELECT analysis_type FROM suggestions WHERE id=?", [id]) : null;
+  if (row && row.analysis_type) tab = row.analysis_type;
+  else if (/^GRAM/i.test(id)) tab = 'grammar';
+  else if (/^APA7/i.test(id)) tab = 'apa7';
+  else if (/^REF/i.test(id)) tab = 'references';
+  else if (/^CONT/i.test(id)) tab = 'content';
+  else if (/^STRUCT/i.test(id)) tab = 'structure';
+
+  const needsSwitch = tab && CARD_TABS.includes(tab) && currentTab !== tab;
+  if (needsSwitch) switchTab(tab);
+
+  setTimeout(() => {
+    const card = document.getElementById('card-' + id);
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.querySelectorAll('.sug-card.card-focused').forEach(c => c.classList.remove('card-focused'));
+    card.classList.add('card-focused');
+    setTimeout(() => card.classList.remove('card-focused'), 2000);
+    scrollToAnchor(id);
+  }, needsSwitch ? 120 : 0);
+}
+
+function restoreAnnotatedDoc() {
+  try {
+    // 1. Try localStorage first (preserves any manually-loaded version)
+    const saved = localStorage.getItem(ANCHOR_STORE_KEY);
+    if (saved) { renderAnnotatedDoc(saved, 'Restored from session'); return; }
+  } catch (err) {
+    console.warn('Could not restore from localStorage:', err.message);
+  }
+  // 2. Auto-load from bundled global (works offline, no user action needed)
+  if (typeof window.ANNOTATED_DOC_MD === 'string' && window.ANNOTATED_DOC_MD.length > 100) {
+    renderAnnotatedDoc(window.ANNOTATED_DOC_MD, 'v1-original · auto-loaded');
+    document.getElementById('toggle-annotations-btn').style.display = '';
+    return;
+  }
+  // 3. Nothing available — show path hint
+  document.getElementById('doc-status').textContent = 'Not loaded — pick: drafts/working-v1-annotated.md';
+}
+
+function toggleInlineAnnotations() {
+  const content = document.getElementById('doc-content');
+  const on = content.classList.toggle('show-inline-annotations');
+  document.getElementById('annotations-icon').textContent = on ? '🙈' : '👁';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MD REPORT VIEWER
+// ═══════════════════════════════════════════════════════════════════════════
+let currentReportSubtab = 'grammar';
+const REPORT_TYPES = ['grammar', 'apa7', 'references', 'content', 'structure'];
+const REPORT_LABELS = { grammar: 'Grammar', apa7: 'APA 7', references: 'References', content: 'Content', structure: 'Structure' };
+
+function switchScoreTab(tab) {
+  document.getElementById('sco-pane-radar').style.display = tab === 'radar' ? '' : 'none';
+  document.getElementById('sco-pane-sections').style.display = tab === 'sections' ? '' : 'none';
+  document.querySelectorAll('.sco-tab').forEach(t => t.classList.toggle('active', t.id === 'sco-tab-' + tab));
+  if (tab === 'radar' && radarChart) radarChart.resize();
+}
+
+function switchReportSubtab(type, el) {
+  currentReportSubtab = type;
+  document.querySelectorAll('.report-subtab').forEach(t => t.classList.toggle('active', t.dataset.report === type));
+  REPORT_TYPES.forEach(t => {
+    const panel = document.getElementById('report-' + t);
+    if (panel) panel.style.display = (t === type) ? '' : 'none';
+  });
+  updateReportStatus(type);
+}
+
+function updateReportStatus(type) {
+  const statusEl = document.getElementById('report-status');
+  if (!statusEl) return;
+  const loaded = !!localStorage.getItem('report-' + type + '-v1');
+  statusEl.textContent = loaded
+    ? `${REPORT_LABELS[type]} report loaded (v1-original).`
+    : `No ${REPORT_LABELS[type]} report loaded. Click "Load Report" to open a .md file.`;
+}
+
+function loadReportFile(analysisType) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.md';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const mdText = ev.target.result;
+      if (!mdText || !mdText.trim()) {
+        toast('The selected file appears to be empty.', 'error');
+        return;
+      }
+      let html;
+      try {
+        html = marked.parse(mdText);
+      } catch (parseErr) {
+        toast('Failed to render the report — the Markdown may be malformed. (' + parseErr.message + ')', 'error');
+        console.error('marked.parse failed for', file.name, parseErr);
+        return;
+      }
+      const panelEl = document.getElementById(`report-${analysisType}`);
+      if (!panelEl) {
+        console.error('Report panel element not found: report-' + analysisType);
+        return;
+      }
+      panelEl.innerHTML = (typeof DOMPurify !== 'undefined')
+        ? DOMPurify.sanitize(html)
+        : html;
+      try {
+        localStorage.setItem(`report-${analysisType}-v1`, mdText);
+      } catch (storageErr) {
+        console.warn('Could not save report to localStorage:', storageErr.message);
+        toast('Report displayed but could not be saved (storage may be full). It will not persist on refresh.', 'error');
+      }
+      updateReportStatus(analysisType);
+      toast(`${REPORT_LABELS[analysisType] || analysisType} report loaded`, 'success');
+    };
+    reader.onerror = () => {
+      toast('Failed to read "' + file.name + '". The file may be unreadable.', 'error');
+      console.error('FileReader error reading', file.name, reader.error);
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+  input.click();
+}
+
+function restoreReports() {
+  REPORT_TYPES.forEach(type => {
+    let mdText;
+    try {
+      mdText = localStorage.getItem('report-' + type + '-v1');
+    } catch (err) {
+      console.warn('Could not read saved report for', type, 'from localStorage:', err.message);
+    }
+    // Fall back to bundled global if localStorage has nothing
+    if (!mdText && window.V1_REPORTS && window.V1_REPORTS[type]) {
+      mdText = window.V1_REPORTS[type];
+    }
+    if (mdText) {
+      const panel = document.getElementById('report-' + type);
+      if (panel) {
+        try {
+          const html = marked.parse(mdText);
+          panel.innerHTML = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(html) : html;
+        } catch (parseErr) {
+          console.warn('Could not re-render saved', type, 'report:', parseErr.message);
+          panel.innerHTML = '<p style="color:var(--critical)">Saved report could not be rendered. Please re-load the file.</p>';
+        }
+      }
+    }
+  });
+  updateReportStatus(currentReportSubtab);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════════════════
+let currentTab = 'overview';
+// Tabs whose pane lives inside the right cards-panel of the two-panel layout
+const CARD_TABS = ['grammar', 'apa7', 'references', 'content', 'structure'];
+function switchTab(tab) {
+  // Any tab navigation clears a pending category filter; filterByCategory re-sets it
+  // immediately after calling switchTab so its own filter survives.
+  if (activeCategoryFilter) { activeCategoryFilter = null; renderFilterBar(); }
+  currentTab = tab;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.toggle('active', el.id === 'tab-' + tab));
+
+  const panels   = document.getElementById('main-panels');
+  const docPanel = document.getElementById('doc-panel');
+  const overview = document.getElementById('report-overview');
+
+  if (tab === 'reports') {
+    // Reports pane is a full-width sibling outside the two-panel layout
+    panels.style.display = 'none';
+    overview.style.display = 'none';
+  } else if (tab === 'overview') {
+    // Overview pane lives inside cards-panel; show it full width (hide doc panel)
+    panels.style.display = 'flex';
+    overview.style.display = 'none';        // overview content shown in the pane itself
+    docPanel.style.display = 'none';
+  } else {
+    // Category card tabs: show doc panel + cards + the collapsible overview
+    panels.style.display = 'flex';
+    overview.style.display = '';
+    docPanel.style.display = '';
+    renderTab(tab);
+  }
+  // Close sidebar on mobile
+  if (window.innerWidth < 900) {
+    document.getElementById('sidebar').classList.add('collapsed');
+  }
+}
+
+function toggleReportOverview() {
+  document.getElementById('report-overview').classList.toggle('collapsed');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+function setPassFilter(val, el) {
+  passFilter = val;
+  document.querySelectorAll('.toggle-opt').forEach(o => o.classList.toggle('active', o.dataset.pass === val));
+  renderAll();
+}
+
+function applyFilters() { renderAll(); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════════════════════════════
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('theme-toggle').textContent = isDark ? '🌙' : '☀️';
+  localStorage.setItem('lia-theme', isDark ? 'light' : 'dark');
+  // Rebuild radar charts with new colors
+  setTimeout(() => { renderOverview(); renderReportOverview(); }, 50);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// IMPORT — MARKDOWN PARSER
+// ═══════════════════════════════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+  if (id === 'import-modal') {
+    document.getElementById('import-log').textContent = '';
+    document.getElementById('import-commit-btn').style.display = 'none';
+    pendingImportData = null;
+    document.getElementById('file-input').value = '';
+  }
+}
+
+function setupDropZone() {
+  const zone = document.getElementById('drop-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    handleFiles(e.dataTransfer.files);
+  });
+  document.getElementById('file-input').addEventListener('change', e => handleFiles(e.target.files));
+}
+
+async function handleFiles(files) {
+  const log = document.getElementById('import-log');
+  log.innerHTML = '';
+  pendingImportData = [];
+  for (const file of files) {
+    const lineEl = document.createElement('div');
+    let text;
+    try {
+      text = await file.text();
+    } catch (readErr) {
+      lineEl.style.color = 'var(--critical)';
+      lineEl.textContent = `❌ ${file.name}: Could not read file — ${readErr.message}`;
+      log.appendChild(lineEl);
+      continue;
+    }
+    if (!text || !text.trim()) {
+      lineEl.style.color = 'var(--critical)';
+      lineEl.textContent = `❌ ${file.name}: File is empty.`;
+      log.appendChild(lineEl);
+      continue;
+    }
+    let result;
+    try {
+      result = parseMarkdownReport(text, file.name);
+    } catch (parseErr) {
+      lineEl.style.color = 'var(--critical)';
+      lineEl.textContent = `❌ ${file.name}: Parse error — ${parseErr.message}`;
+      console.error('parseMarkdownReport threw for', file.name, parseErr);
+      log.appendChild(lineEl);
+      continue;
+    }
+    if (result.error) {
+      lineEl.style.color = 'var(--critical)';
+      lineEl.textContent = `❌ ${file.name}: ${result.error}`;
+    } else {
+      lineEl.style.color = 'var(--accepted)';
+      lineEl.textContent = `✓ ${file.name}: found ${result.suggestions.length} suggestions, ${result.run ? 'run info OK' : 'no run header'}`;
+      pendingImportData.push(result);
+    }
+    log.appendChild(lineEl);
+  }
+  if (pendingImportData.length > 0) {
+    document.getElementById('import-commit-btn').style.display = 'inline-flex';
+  }
+}
+
+function parseMarkdownReport(text, filename) {
+  const lines = text.split('\n');
+
+  // Extract header info
+  let analysisType = 'content';
+  let passType = 'light';
+  let runDate = new Date().toISOString().slice(0, 10);
+  let score = null;
+  let summary = '';
+
+  // Detect analysis type from filename pattern: 04-content.md
+  const fnMatch = filename.match(/\d+-(\w+)/);
+  if (fnMatch) {
+    const raw = fnMatch[1].toLowerCase();
+    if (raw.includes('gram') || raw.includes('spell')) analysisType = 'grammar';
+    else if (raw.includes('apa') || raw.includes('style')) analysisType = 'apa7';
+    else if (raw.includes('ref')) analysisType = 'references';
+    else if (raw.includes('cont') || raw.includes('arg')) analysisType = 'content';
+    else if (raw.includes('struct') || raw.includes('flow')) analysisType = 'structure';
+    else analysisType = raw;
+  }
+
+  // Scan header lines
+  for (const line of lines.slice(0, 20)) {
+    const lc = line.toLowerCase();
+    if (lc.includes('**pass:**')) passType = lc.includes('deep') ? 'deep' : 'light';
+    if (lc.includes('**analysis date:**')) { const m = line.match(/\d{4}-\d{2}-\d{2}/); if (m) runDate = m[0]; }
+    if (lc.includes('**overall score:**')) { const m = line.match(/(\d+)\s*\/\s*10/); if (m) score = parseInt(m[1]); }
+    if (lc.includes('**analyzer:**') || lc.includes('**analysis type:**')) {
+      const val = line.replace(/\*\*/g,'').replace(/.*?:/,'').trim().toLowerCase();
+      if (val.includes('gram')) analysisType = 'grammar';
+      else if (val.includes('apa') || val.includes('style')) analysisType = 'apa7';
+      else if (val.includes('ref')) analysisType = 'references';
+      else if (val.includes('cont') || val.includes('arg')) analysisType = 'content';
+      else if (val.includes('struct')) analysisType = 'structure';
+    }
+  }
+
+  // Extract section scores from table
+  const sectionScores = [];
+  for (const line of lines) {
+    const tableMatch = line.match(/\|\s*([^|]+?)\s*\|\s*(\d+)\s*\|\s*([^|]+?)\s*\|/);
+    if (tableMatch && tableMatch[2]) {
+      const sn = tableMatch[1].replace(/\*/g,'').trim();
+      const sc = parseInt(tableMatch[2]);
+      if (sn && !isNaN(sc) && sc >= 0 && sc <= 10 && sn.toLowerCase() !== 'section') {
+        sectionScores.push({ section_name: sn, score: sc });
+      }
+    }
+  }
+
+  // Extract summary from Overall Assessment
+  const oaIdx = lines.findIndex(l => l.includes('## Overall Assessment'));
+  if (oaIdx >= 0) {
+    const summaryLines = [];
+    for (let i = oaIdx + 1; i < Math.min(oaIdx + 4, lines.length); i++) {
+      if (lines[i].startsWith('#')) break;
+      summaryLines.push(lines[i]);
+    }
+    summary = summaryLines.join(' ').replace(/\s+/g, ' ').trim().slice(0, 500);
+  }
+
+  // Parse suggestion blocks — look for ### ID patterns
+  const suggestions = [];
+  const ID_PATTERN = /^###\s+(GRAM|APA7|REF|CONT|STRUCT)-(\d+)/i;
+
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    const m = line.match(ID_PATTERN);
+    if (m) {
+      const id = m[0].replace(/^###\s+/, '').trim().toUpperCase();
+      const sug = { id, pass_type: passType, category: analysisType };
+      i++;
+      // Read bullet fields until next heading or empty line sequence
+      while (i < lines.length && !lines[i].match(/^##/)) {
+        const bline = lines[i];
+        const fld = bline.match(/^-\s+\*\*([^*]+)\*\*:?\s*(.*)/);
+        if (fld) {
+          const key = fld[1].toLowerCase().trim();
+          const val = fld[2].replace(/^`|`$/g, '').trim();
+          if (key === 'pass') sug.pass_type = val.toLowerCase() === 'deep' ? 'deep' : 'light';
+          else if (key === 'severity') sug.severity = val.toLowerCase();
+          else if (key === 'section') sug.section = val;
+          else if (key === 'line' || key === 'lines') sug.line_number = val;
+          else if (key === 'category') sug.category_tag = val;
+          else if (key === 'original') sug.original_text = val;
+          else if (key === 'suggested') sug.suggested_text = val;
+          else if (key === 'reason') sug.reason = val;
+          else if (key === 'issue' || key === 'impact on grade') sug.reason = (sug.reason ? sug.reason + ' ' : '') + val;
+          else if (key === 'recommendation') sug.suggested_text = (sug.suggested_text ? sug.suggested_text + '\n' + val : val);
+        }
+        i++;
+      }
+      // Validate severity
+      if (!['critical','high','medium','low'].includes(sug.severity)) sug.severity = 'medium';
+      // Map ID prefix to the tab (analysis_type)
+      let tab;
+      if (id.startsWith('GRAM')) tab = 'grammar';
+      else if (id.startsWith('APA7')) tab = 'apa7';
+      else if (id.startsWith('REF')) tab = 'references';
+      else if (id.startsWith('CONT')) tab = 'content';
+      else if (id.startsWith('STRUCT')) tab = 'structure';
+      else tab = analysisType;
+      sug.analysis_type = tab;
+      // category holds the fine-grained sub-category (from a "Category:" bullet) when
+      // present, else falls back to the tab. This keeps the breakdown query working.
+      sug.category = sug.category_tag || tab;
+
+      suggestions.push(sug);
+    } else {
+      i++;
+    }
+  }
+
+  return {
+    analysisType, passType, runDate, score, summary,
+    sectionScores, suggestions,
+    run: { analysisType, passType, runDate, score, summary }
+  };
+}
+
+function finalizeImport() {
+  if (!pendingImportData || !pendingImportData.length) return;
+  if (!db) {
+    toast('Database is not ready yet. Please wait for it to finish loading, then try again.', 'error');
+    return;
+  }
+
+  // Ensure base document exists
+  db.run("INSERT OR IGNORE INTO documents(id, version) VALUES(1, 'LiaZamfir.ReaserchPractice.WorkInProgress.md')");
+
+  let totalNew = 0;
+  let totalSkipped = 0;
+
+  for (const result of pendingImportData) {
+    const { run, sectionScores, suggestions } = result;
+
+    // Create analysis run
+    let runId;
+    try {
+      db.run(`INSERT INTO analysis_runs(document_id, analysis_type, pass_type, run_date, score, summary)
+        VALUES(1, ?, ?, ?, ?, ?)`,
+        [run.analysisType, run.passType, run.runDate, run.score, run.summary]);
+      runId = db.exec("SELECT last_insert_rowid() as id")[0].values[0][0];
+    } catch {
+      const existing = queryOne("SELECT id FROM analysis_runs WHERE analysis_type=? AND run_date=?", [run.analysisType, run.runDate]);
+      runId = existing?.id || 1;
+    }
+
+    // Insert section scores
+    for (const ss of sectionScores) {
+      try {
+        db.run("INSERT INTO section_scores(analysis_run_id, section_name, score) VALUES(?,?,?)",
+          [runId, ss.section_name, ss.score]);
+      } catch (err) {
+        // Duplicate section score for this run — non-fatal but log it
+        if (!err.message.includes('UNIQUE constraint')) {
+          console.warn('Unexpected error inserting section score for', ss.section_name, ':', err.message);
+        }
+      }
+    }
+
+    // Insert suggestions
+    for (const s of suggestions) {
+      try {
+        db.run(`INSERT OR IGNORE INTO suggestions
+          (id, analysis_run_id, pass_type, analysis_type, category, severity, section, line_number, original_text, suggested_text, reason)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?)`,
+          [s.id, runId, s.pass_type, s.analysis_type||run.analysisType||'', s.category, s.severity,
+           s.section||null, s.line_number||null,
+           s.original_text||null, s.suggested_text||null, s.reason||null]);
+        totalNew++;
+      } catch (err) {
+        // UNIQUE constraint = genuine duplicate, expected and silent.
+        // Any other error (schema mismatch, type error) must be visible.
+        if (err.message.includes('UNIQUE constraint')) {
+          totalSkipped++;
+        } else {
+          console.error('Unexpected error inserting suggestion', s.id, ':', err.message);
+          totalSkipped++;
+        }
+      }
+    }
+  }
+
+  autoSaveNow();
+  renderAll();
+  closeModal('import-modal');
+  toast(`Imported ${totalNew} suggestions${totalSkipped ? ` (${totalSkipped} already existed)` : ''}`, 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SAVE / LOAD DATABASE
+// ═══════════════════════════════════════════════════════════════════════════
+function saveDatabase() {
+  if (!db) {
+    toast('Database is not ready yet. Please wait for it to finish loading.', 'error');
+    return;
+  }
+  try {
+    const data = db.export();
+    const blob = new Blob([data], { type: 'application/x-sqlite3' });
+    const date = new Date().toISOString().slice(0, 10);
+    downloadBlob(blob, `lia-dissertation-${date}.sqlite`);
+    toast('Database saved', 'success');
+  } catch (err) {
+    toast('Failed to save database: ' + err.message, 'error');
+    console.error('saveDatabase failed:', err);
+  }
+}
+
+function loadDatabase() {
+  if (!SQL) {
+    toast('Database engine has not loaded yet. Please wait and try again. If the problem persists, refresh the page.', 'error');
+    return;
+  }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.sqlite,.db';
+  input.onchange = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const buf = await file.arrayBuffer();
+      db = new SQL.Database(new Uint8Array(buf));
+      initSchema();
+      renderAll();
+      autoSaveNow();
+      toast('Database loaded: ' + file.name, 'success');
+    } catch (err) {
+      toast('Failed to load database: ' + err.message + '. The file may be corrupted or not a valid SQLite database.', 'error');
+      console.error('loadDatabase failed for', file.name, err);
+    }
+  };
+  input.click();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EXPORT DECISIONS
+// ═══════════════════════════════════════════════════════════════════════════
+function exportDecisions() {
+  if (!db) {
+    toast('Database is not ready yet. Please wait for it to finish loading.', 'error');
+    return;
+  }
+  const allSugs = query("SELECT * FROM suggestions ORDER BY id");
+  const stats = queryOne(`SELECT
+    COUNT(*) as total,
+    SUM(CASE WHEN status='accepted' THEN 1 ELSE 0 END) as accepted,
+    SUM(CASE WHEN status='denied' THEN 1 ELSE 0 END) as denied,
+    SUM(CASE WHEN status='modified' THEN 1 ELSE 0 END) as modified,
+    SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) as pending
+  FROM suggestions`);
+
+  const payload = {
+    exportDate: new Date().toISOString().slice(0, 10),
+    document: 'LiaZamfir.ReaserchPractice.WorkInProgress.md',
+    summary: {
+      total: stats?.total || 0,
+      accepted: stats?.accepted || 0,
+      denied: stats?.denied || 0,
+      modified: stats?.modified || 0,
+      pending: stats?.pending || 0
+    },
+    decisions: allSugs.map(s => ({
+      id: s.id,
+      category: s.category,
+      severity: s.severity,
+      passType: s.pass_type,
+      section: s.section,
+      status: s.status,
+      originalText: s.original_text,
+      acceptedText: s.status === 'accepted' ? s.suggested_text :
+                    s.status === 'modified' ? s.author_text : null,
+      authorNote: s.author_note,
+      reviewedAt: s.reviewed_at
+    }))
+  };
+
+  try {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const date = new Date().toISOString().slice(0, 10);
+    downloadBlob(blob, `lia-dissertation-decisions-${date}.json`);
+    toast('Decisions exported', 'success');
+  } catch (err) {
+    toast('Export failed: ' + err.message, 'error');
+    console.error('exportDecisions failed:', err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════════════════
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+/**
+ * Sanitize an HTML string through DOMPurify before assigning to innerHTML.
+ * Falls back to the raw string if DOMPurify is not yet loaded (should not
+ * happen in practice — DOMPurify loads synchronously before app init).
+ * All external data has already been HTML-escaped via esc(); DOMPurify is a
+ * second defence-in-depth layer against any missed escape path.
+ */
+function safeHTML(html) {
+  if (typeof DOMPurify !== 'undefined') {
+    return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+  }
+  return html; // fallback — esc() still protects all data fields
+}
+
+function toast(msg, type) {
+  const wrap = document.getElementById('toast-wrap');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STARTUP
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Apply saved theme
+(function() {
+  const saved = localStorage.getItem('lia-theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+    document.getElementById('theme-toggle').textContent = saved === 'dark' ? '☀️' : '🌙';
+  }
+})();
+
+init();
+</script>
+</body>
+</html>
