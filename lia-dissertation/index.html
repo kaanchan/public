@@ -2131,13 +2131,28 @@ function scrollToAnchor(id) {
   setTimeout(() => a.classList.remove('anchor-pulse'), 1600);
 }
 
+// English section names used in some cards → Romanian heading text in the document.
+const SECTION_EN_RO = {
+  'abstract': 'rezumat', 'introduction': 'introducere',
+  'theoretical framework': 'cadru teoretic', 'theory': 'cadru teoretic',
+  'objectives': 'obiectivele', 'hypotheses': 'ipotezele',
+  'methodology': 'designul cercetării', 'participants': 'participanți',
+  'measures': 'măsuri', 'intervention': 'intervenție',
+  'results': 'rezultate', 'discussion': 'discuții',
+  'references': 'referințe', 'conclusions': 'concluzii',
+};
+
 function scrollDocToSection(sectionName) {
   const content = document.getElementById('doc-content');
   if (!content || !sectionName) return;
-  const lower = sectionName.toLowerCase();
-  for (const h of content.querySelectorAll('h1,h2,h3,h4')) {
-    if (h.textContent.toLowerCase().includes(lower)) {
-      h.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Normalise: strip sub-section qualifiers after '/', '—', and map English→Romanian
+  const base = sectionName.split(/[\/—]/)[0].trim().toLowerCase();
+  const needle = SECTION_EN_RO[base] || base;
+  // The dissertation uses **bold** headings (rendered as <strong> inside <p>),
+  // not markdown # headings. Query both to be safe.
+  for (const el of content.querySelectorAll('h1,h2,h3,h4,strong')) {
+    if (el.textContent.toLowerCase().includes(needle)) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
   }
