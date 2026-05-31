@@ -630,6 +630,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <script src="data/v1-feedback.js?v=2026-05-31"></script>
 <script src="data/annotated-doc.js?v=2026-05-31"></script>
 <script src="data/reports.js?v=2026-05-31"></script>
+<script src="data/review-config.js?v=2026-05-31"></script>
 <script>
   if (typeof window.V1_FEEDBACK_DATA === 'undefined')
     console.warn('[lia-feedback] data/v1-feedback.js failed to load — suggestions unavailable.');
@@ -637,6 +638,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
     console.warn('[lia-feedback] data/annotated-doc.js failed to load — document view unavailable.');
   if (typeof window.V1_REPORTS === 'undefined')
     console.warn('[lia-feedback] data/reports.js failed to load — reports will require manual load.');
+  if (typeof window.REVIEW_CONFIG === 'undefined')
+    console.warn('[lia-feedback] data/review-config.js failed to load — review label unavailable.');
 </script>
 </head>
 <body>
@@ -1020,9 +1023,25 @@ const TAB_MAP = {
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
 // ═══════════════════════════════════════════════════════════════════════════
+// REVIEW CONFIG
+// ═══════════════════════════════════════════════════════════════════════════
+function loadReviewConfig() {
+  if (typeof window.REVIEW_CONFIG === 'undefined') return;
+  const cfg = window.REVIEW_CONFIG;
+  const el = document.getElementById('ro-version');
+  if (!el) return;
+  const passLabel = cfg.pass_type
+    ? cfg.pass_type.charAt(0).toUpperCase() + cfg.pass_type.slice(1) + ' Pass'
+    : '';
+  const parts = [cfg.dissertation_revision, passLabel, cfg.date].filter(Boolean);
+  el.textContent = parts.join(' · ');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════════════════
 async function init() {
+  loadReviewConfig();
   // Render the UI shell immediately — don't wait for DB
   renderAll();
   setupDropZone();
@@ -1576,15 +1595,16 @@ function renderCard(s) {
   const metaStyle = (hasRealSection || hasRealLine) ? '' : ' style="color:var(--text-faint)"';
 
   const actionButtons = s.status === 'pending' ? `
-    <button class="action-btn accept" onclick="acceptSuggestion('${s.id}')">✓ Accept</button>
-    <button class="action-btn deny"   onclick="openDenyEditor('${s.id}')">✗ Deny</button>
-    <button class="action-btn modify" onclick="openModifyEditor('${s.id}')">✎ Modify…</button>
+    <button class="action-btn accept" onclick="event.stopPropagation();acceptSuggestion('${s.id}')">✓ Accept</button>
+    <button class="action-btn deny"   onclick="event.stopPropagation();openDenyEditor('${s.id}')">✗ Deny</button>
+    <button class="action-btn modify" onclick="event.stopPropagation();openModifyEditor('${s.id}')">✎ Modify…</button>
   ` : `
-    <button class="action-btn undo" onclick="undoDecision('${s.id}')">↩ Undo</button>
+    <button class="action-btn undo" onclick="event.stopPropagation();undoDecision('${s.id}')">↩ Undo</button>
   `;
 
   return `
   <div class="sug-card ${passClass} ${statusClass}" id="card-${s.id}" tabindex="0"
+       onclick="scrollDocToSuggestion('${s.id}')"
        onkeydown="handleCardKey(event, '${s.id}')">
     <div class="sug-header">
       <span class="sug-id">${esc(s.id)}</span>
@@ -2113,6 +2133,18 @@ function scrollDocToSection(sectionName) {
       h.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
     }
+  }
+}
+
+function scrollDocToSuggestion(id) {
+  if (!db) return;
+  const sug = queryOne("SELECT id, section FROM suggestions WHERE id=?", [id]);
+  if (!sug) return;
+  const content = document.getElementById('doc-content');
+  if (content && content.classList.contains('show-inline-annotations')) {
+    scrollToAnchor(sug.id);
+  } else if (sug.section) {
+    scrollDocToSection(sug.section);
   }
 }
 
