@@ -2789,7 +2789,9 @@ function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
  */
 function safeHTML(html) {
   if (typeof DOMPurify !== 'undefined') {
-    return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+    // ADD_ATTR preserves onclick/onkeydown on developer-authored card templates.
+    // All user-controlled strings are pre-escaped via esc() before reaching here.
+    return DOMPurify.sanitize(html, { USE_PROFILES: { html: true }, ADD_ATTR: ['onclick', 'onkeydown'] });
   }
   return html; // fallback — esc() still protects all data fields
 }
