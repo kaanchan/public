@@ -557,7 +557,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 .doc-panel-header { padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px; }
 .doc-panel-header .dph-title { font-size: 0.82rem; font-weight: 700; color: var(--text); }
 .doc-panel-header .dph-status { font-size: 0.74rem; color: var(--text-faint); margin-left: auto; }
-.doc-content { padding: 16px 20px; font-size: 0.87rem; line-height: 1.7; }
+.doc-content { padding: 16px 20px 16px 52px; font-size: 0.87rem; line-height: 1.7; position: relative; }
 .doc-content h1, .doc-content h2, .doc-content h3 { margin: 14px 0 8px; line-height: 1.3; }
 .doc-content h1 { font-size: 1.25rem; } .doc-content h2 { font-size: 1.1rem; } .doc-content h3 { font-size: 0.98rem; }
 .doc-content p { margin: 8px 0; }
@@ -565,6 +565,14 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 .doc-content table { border-collapse: collapse; font-size: 0.82rem; margin: 10px 0; }
 .doc-content th, .doc-content td { border: 1px solid var(--border); padding: 4px 8px; }
 .doc-empty { padding: 40px 24px; text-align: center; color: var(--text-faint); font-size: 0.85rem; }
+.ln-anchor {
+  position: absolute; left: 0; width: 44px;
+  text-align: right; padding-right: 8px;
+  font-size: 0.72rem; color: var(--text-faint);
+  font-family: 'Consolas','Monaco',monospace;
+  user-select: none; pointer-events: none;
+}
+.ln-anchor::before { content: attr(data-line); }
 
 .anchor { cursor: pointer; font-size: 0.72em; vertical-align: super; border-radius: 3px; padding: 0 2px; transition: background 0.15s; user-select: none; }
 .anchor-critical { color: #DC2626; }
@@ -629,6 +637,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <!-- Cache-bust: 2026-05-31 — query string forces browsers to re-fetch regenerated data files -->
 <script src="data/v1-feedback.js?v=2026-05-31"></script>
 <script src="data/annotated-doc.js?v=2026-05-31"></script>
+<script src="data/annotated-doc-review.js?v=2026-05-31"></script>
 <script src="data/reports.js?v=2026-05-31"></script>
 <script src="data/review-config.js?v=2026-05-31"></script>
 <script>
@@ -636,6 +645,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
     console.warn('[lia-feedback] data/v1-feedback.js failed to load — suggestions unavailable.');
   if (typeof window.ANNOTATED_DOC_MD === 'undefined')
     console.warn('[lia-feedback] data/annotated-doc.js failed to load — document view unavailable.');
+  if (typeof window.ANNOTATED_DOC_MD_REVIEW === 'undefined')
+    console.warn('[lia-feedback] data/annotated-doc-review.js failed to load — annotations toggle unavailable.');
   if (typeof window.V1_REPORTS === 'undefined')
     console.warn('[lia-feedback] data/reports.js failed to load — reports will require manual load.');
   if (typeof window.REVIEW_CONFIG === 'undefined')
@@ -1047,6 +1058,7 @@ async function init() {
   setupDropZone();
   restoreReports();
   restoreAnnotatedDoc();
+  maybeShowAnnotationsToggle();
   // Apply initial panel visibility for the default (overview) tab
   switchTab('overview');
 
@@ -2034,6 +2046,7 @@ function seedOverviewScores() {
 // DOCUMENT PANEL — annotated dissertation + clickable anchors
 // ═══════════════════════════════════════════════════════════════════════════
 const ANCHOR_STORE_KEY = 'lia-annotated-doc-v1';
+let annotationsVisible = false;
 
 function importAnnotatedDoc() {
   const input = document.createElement('input');
@@ -2076,7 +2089,7 @@ function renderAnnotatedDoc(mdText, filename) {
 
   let html;
   try {
-    html = marked.parse(mdText);
+    html = marked.parse(addLineAnchors(mdText));
   } catch (parseErr) {
     contentEl.innerHTML = '<p style="color:var(--critical);padding:16px;">Failed to render document: ' + esc(parseErr.message) + '</p>';
     console.error('marked.parse failed in renderAnnotatedDoc:', parseErr);
@@ -2199,9 +2212,15 @@ function wireListeners(container) {
 
 function scrollDocToSuggestion(id) {
   if (!db) return;
-  const sug = queryOne("SELECT id, section FROM suggestions WHERE id=?", [id]);
+  const sug = queryOne("SELECT id, section, line_number FROM suggestions WHERE id=?", [id]);
   if (!sug) return;
   const content = document.getElementById('doc-content');
+  // Try line anchor first (precise)
+  if (sug.line_number) {
+    const anchor = document.getElementById('line-' + sug.line_number);
+    if (anchor) { anchor.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  }
+  // Fall back to section heading
   if (content && content.classList.contains('show-inline-annotations')) {
     scrollToAnchor(sug.id);
   } else if (sug.section) {
@@ -2251,11 +2270,25 @@ function focusSuggestion(id) {
   }, needsSwitch ? 120 : 0);
 }
 
+function addLineAnchors(md) {
+  return md.split('\n').map((line, i) => {
+    const lineNum = i + 1;
+    const anchor = `<span id="line-${lineNum}" class="ln-anchor" data-line="${lineNum}"></span>`;
+    // For heading lines (start with one or more # chars), insert anchor after the # prefix
+    // so that marked.parse still recognises the heading syntax.
+    const headingMatch = line.match(/^(#{1,6}\s)/);
+    if (headingMatch) {
+      return headingMatch[1] + anchor + line.slice(headingMatch[1].length);
+    }
+    return anchor + line;
+  }).join('\n');
+}
+
 function restoreAnnotatedDoc() {
   try {
     // 1. Try localStorage first (preserves any manually-loaded version)
     const saved = localStorage.getItem(ANCHOR_STORE_KEY);
-    if (saved) { renderAnnotatedDoc(saved, 'Restored from session'); return; }
+    if (saved) { renderAnnotatedDoc(saved, 'Restored from session'); document.getElementById('toggle-annotations-btn').style.display = ''; return; }
   } catch (err) {
     console.warn('Could not restore from localStorage:', err.message);
   }
@@ -2269,10 +2302,32 @@ function restoreAnnotatedDoc() {
   document.getElementById('doc-status').textContent = 'Not loaded — pick: drafts/working-v1-annotated.md';
 }
 
+function maybeShowAnnotationsToggle() {
+  if (typeof window.ANNOTATED_DOC_MD_REVIEW !== 'undefined') {
+    const btn = document.getElementById('toggle-annotations-btn');
+    if (btn) btn.style.display = '';
+  }
+}
+
 function toggleInlineAnnotations() {
-  const content = document.getElementById('doc-content');
-  const on = content.classList.toggle('show-inline-annotations');
-  document.getElementById('annotations-icon').textContent = on ? '🙈' : '👁';
+  annotationsVisible = !annotationsVisible;
+  if (annotationsVisible) {
+    if (typeof window.ANNOTATED_DOC_MD_REVIEW === 'string' && window.ANNOTATED_DOC_MD_REVIEW.length > 100) {
+      renderAnnotatedDoc(window.ANNOTATED_DOC_MD_REVIEW, 'v1-annotated · review version');
+    }
+  } else {
+    // Restore clean version: prefer localStorage, fall back to bundled clean doc
+    let cleanMd = null;
+    try {
+      const saved = localStorage.getItem(ANCHOR_STORE_KEY);
+      if (saved) cleanMd = saved;
+    } catch (_) {}
+    if (!cleanMd && typeof window.ANNOTATED_DOC_MD === 'string' && window.ANNOTATED_DOC_MD.length > 100) {
+      cleanMd = window.ANNOTATED_DOC_MD;
+    }
+    if (cleanMd) renderAnnotatedDoc(cleanMd, 'v1-original · auto-loaded');
+  }
+  document.getElementById('annotations-icon').textContent = annotationsVisible ? '🙈' : '👁';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
