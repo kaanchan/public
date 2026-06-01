@@ -634,12 +634,13 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 }
 </style>
 <!-- Pre-load feedback data and annotated document — works with file:// -->
-<!-- Cache-bust: 2026-05-31 — query string forces browsers to re-fetch regenerated data files -->
-<script src="data/v1-feedback.js?v=2026-05-31"></script>
-<script src="data/annotated-doc.js?v=2026-05-31"></script>
-<script src="data/annotated-doc-review.js?v=2026-05-31"></script>
-<script src="data/reports.js?v=2026-05-31"></script>
-<script src="data/review-config.js?v=2026-05-31"></script>
+<!-- Cache-bust: 2026-06-01 — query string forces browsers to re-fetch regenerated data files -->
+<script src="data/v1-feedback.js?v=2026-06-01"></script>
+<script src="data/v2-feedback.js?v=2026-06-01"></script>
+<script src="data/annotated-doc.js?v=2026-06-01"></script>
+<script src="data/annotated-doc-review.js?v=2026-06-01"></script>
+<script src="data/reports.js?v=2026-06-01"></script>
+<script src="data/review-config.js?v=2026-06-01"></script>
 <script>
   if (typeof window.V1_FEEDBACK_DATA === 'undefined')
     console.warn('[lia-feedback] data/v1-feedback.js failed to load — suggestions unavailable.');
@@ -1071,7 +1072,7 @@ async function init() {
     // Try restoring saved session
     // Schema version: bump this string whenever a migration changes the schema in a
     // breaking way. Old cached DBs will be discarded and rebuilt from the bundled data.
-    const SCHEMA_VERSION = 'v6-88cards-2026-05-31';
+    const SCHEMA_VERSION = 'v7-95cards-2026-06-01';
     const savedVersion = localStorage.getItem('lia-dissertation-db-version');
     const saved = localStorage.getItem('lia-dissertation-db');
     if (saved && savedVersion === SCHEMA_VERSION) {
@@ -1180,19 +1181,18 @@ function initSchema() {
 }
 
 // Resolve the bundled feedback global into a parsed object.
-// window.V1_FEEDBACK_DATA may be a JSON string (current data/v1-feedback.js) or,
-// defensively, an already-parsed object. Returns null if unavailable/invalid.
+// Prefers V2_FEEDBACK_DATA (latest revision) over V1_FEEDBACK_DATA.
+// Both ship as base64-encoded JSON strings.
 function parseFeedbackGlobal() {
-  const raw = window.V1_FEEDBACK_DATA;
+  const raw = window.V2_FEEDBACK_DATA || window.V1_FEEDBACK_DATA;
   if (!raw) return null;
   if (typeof raw === 'object') return raw;
   if (typeof raw === 'string') {
     try {
-      // v1-feedback.js now ships as base64 to avoid template-literal escape issues
       const decoded = typeof atob !== 'undefined' ? atob(raw) : raw;
       return JSON.parse(decoded);
     }
-    catch (e) { console.warn('parseFeedbackGlobal: could not decode/parse V1_FEEDBACK_DATA:', e.message); return null; }
+    catch (e) { console.warn('parseFeedbackGlobal: could not decode/parse feedback data:', e.message); return null; }
   }
   return null;
 }
