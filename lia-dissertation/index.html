@@ -1094,7 +1094,7 @@ async function init() {
     // Try restoring saved session
     // Schema version: bump this string whenever a migration changes the schema in a
     // breaking way. Old cached DBs will be discarded and rebuilt from the bundled data.
-    const SCHEMA_VERSION = 'v11-73cards-2026-06-03';
+    const SCHEMA_VERSION = 'v12-73cards-2026-06-03';
     // Extract expected card count from schema version string (e.g. "96" from "v8-96cards-...")
     const expectedCards = parseInt((SCHEMA_VERSION.match(/(\d+)cards/) || [])[1] || '0', 10);
 
@@ -1546,7 +1546,7 @@ function renderOverview() {
   // If we have a review index, use it as the source of truth for all passes
   if (reviewIndex.length) {
     const currentId = cfg.schema_version || '';
-    tbody.innerHTML = safeHTML([...reviewIndex].reverse().map(rev => {
+    tbody.innerHTML = safeTableRows([...reviewIndex].reverse().map(rev => {
       const isCurrent = rev.id === (window.REVIEW_INDEX && window.REVIEW_INDEX.latest
         ? window.REVIEW_INDEX.latest.replace('reviews/','').replace('/review.json','') : '');
       const avg = isCurrent && dbAvg ? dbAvg : '—';
@@ -1571,7 +1571,7 @@ function renderOverview() {
       runGroups[key].types.push(r.analysis_type);
       if (r.score != null) runGroups[key].scores.push(r.score);
     }
-    tbody.innerHTML = safeHTML(Object.values(runGroups).map(g => {
+    tbody.innerHTML = safeTableRows(Object.values(runGroups).map(g => {
       const avgScore = g.scores.length ? (g.scores.reduce((a,b)=>a+b,0)/g.scores.length).toFixed(1) : '—';
       const issueCount = queryOne(`SELECT COUNT(*) as c FROM suggestions s JOIN analysis_runs ar ON s.analysis_run_id = ar.id WHERE ar.run_date = ?`, [g.date]);
       return `<tr>
@@ -3001,6 +3001,24 @@ function safeHTML(html) {
     return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
   }
   return html; // fallback — esc() still protects all data fields
+}
+
+// Sanitize a string of <tr>/<td> rows. DOMPurify strips table elements when
+// parsing a fragment without table context (valid-HTML parser rule). Wrapping
+// in a full table gives DOMPurify the right context; we then return only the
+// tbody innerHTML so the caller can assign it directly.
+function safeTableRows(rowsHtml) {
+  if (typeof DOMPurify !== 'undefined') {
+    const sanitized = DOMPurify.sanitize(
+      `<table><tbody>${rowsHtml}</tbody></table>`,
+      { USE_PROFILES: { html: true } }
+    );
+    const tmp = document.createElement('div');
+    tmp.innerHTML = sanitized;
+    const tb = tmp.querySelector('tbody');
+    return tb ? tb.innerHTML : '';
+  }
+  return rowsHtml; // fallback — esc() still protects all data fields
 }
 
 function toast(msg, type) {
