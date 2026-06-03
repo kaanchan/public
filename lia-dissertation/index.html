@@ -51,7 +51,7 @@
   --font:         'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono:    'Cascadia Code', 'Consolas', 'Courier New', monospace;
 
-  --header-h:     64px;
+  --header-h:     84px;
   --sidebar-w:    260px;
 }
 
@@ -73,19 +73,22 @@ html, body { height: 100%; font-family: var(--font); background: var(--bg); colo
 /* ─── LAYOUT ──────────────────────────────────────────────────────────── */
 #app { display: flex; flex-direction: column; height: 100vh; }
 
-/* HEADER */
+/* HEADER — two rows: title full-width on top, controls on bottom */
 #header {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
   height: var(--header-h);
   background: var(--bg-card);
   border-bottom: 1px solid var(--border);
   box-shadow: 0 1px 4px var(--shadow);
-  display: flex; align-items: center; gap: 16px; padding: 0 20px;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 6px 20px; gap: 4px;
 }
+#header-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+#header-bottom { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 #header-title { flex: 1; min-width: 0; }
-#header-title h1 { font-size: 1.05rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#header-title p { font-size: 0.75rem; color: var(--text-muted); }
-#progress-wrap { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+#header-title h1 { font-size: 1.0rem; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#header-title p { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#progress-wrap { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-right: auto; }
 #progress-label { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; }
 #progress-bar-outer { width: 140px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
 #progress-bar-inner { height: 100%; background: var(--accepted); border-radius: 3px; transition: width 0.4s ease; width: 0%; }
@@ -437,11 +440,11 @@ select {
   #sidebar.collapsed { transform: translateX(-100%); width: var(--sidebar-w); }
   #sidebar-toggle { display: block; }
   #main { padding: 16px; }
-  #progress-wrap { display: none; }
 }
 @media (max-width: 600px) {
-  #header { padding: 0 12px; }
-  .header-btn span { display: none; }
+  #header { padding: 6px 12px; }
+  .header-btn span:last-child { display: none; }
+  #progress-bar-outer { width: 80px; }
 }
 
 /* DIVIDER */
@@ -637,10 +640,13 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
 <!-- Cache-bust: 2026-06-01 — query string forces browsers to re-fetch regenerated data files -->
 <script src="data/v1-feedback.js?v=2026-06-01"></script>
 <script src="data/v2-feedback.js?v=2026-06-01"></script>
+<script src="data/v3-feedback.js?v=2026-06-02"></script>
+<script src="data/20260602_1400-feedback.js?v=2026-06-02"></script>
 <script src="data/annotated-doc.js?v=2026-06-01"></script>
 <script src="data/annotated-doc-review.js?v=2026-06-01"></script>
 <script src="data/reports.js?v=2026-06-01"></script>
-<script src="data/review-config.js?v=2026-06-01"></script>
+<script src="data/review-config.js?v=2026-06-02"></script>
+<script src="data/review-index.js?v=2026-06-02"></script>
 <script>
   if (typeof window.V1_FEEDBACK_DATA === 'undefined')
     console.warn('[lia-feedback] data/v1-feedback.js failed to load — suggestions unavailable.');
@@ -729,21 +735,26 @@ async function checkAuth() {
 <!-- MAIN APP -->
 <div id="app">
   <header id="header">
-    <button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
-    <div id="header-title">
-      <h1>Dissertație Feedback — Lia Zamfir</h1>
-      <p>Review &amp; Response Interface</p>
+    <div id="header-top">
+      <button id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">☰</button>
+      <div id="header-title">
+        <h1>Dissertație Feedback — Lia Zamfir</h1>
+        <p>Review &amp; Response Interface &nbsp;·&nbsp; <span id="header-pass-label" style="opacity:0.7">Loading…</span></p>
+      </div>
     </div>
-    <div id="progress-wrap">
-      <span id="progress-label">0 of 0 reviewed</span>
-      <div id="progress-bar-outer"><div id="progress-bar-inner"></div></div>
+    <div id="header-bottom">
+      <div id="progress-wrap">
+        <span id="progress-label">0 of 0 reviewed</span>
+        <div id="progress-bar-outer"><div id="progress-bar-inner"></div></div>
+      </div>
+      <span id="autosave-indicator" title="Changes saved automatically">● Saved</span>
+      <button class="header-btn" onclick="openModal('import-modal')"><span>⬆</span> <span>Import</span></button>
+      <button class="header-btn" onclick="loadDatabase()"><span>📂</span> <span>Load DB</span></button>
+      <button class="header-btn" onclick="saveDatabase()"><span>💾</span> <span>Save DB</span></button>
+      <button class="header-btn" onclick="resetDatabase()" title="Clear saved session and reload fresh from bundled data"><span>↺</span> <span>Reset</span></button>
+      <button class="header-btn primary" onclick="exportDecisions()"><span>⬇</span> <span>Export</span></button>
+      <button class="header-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
     </div>
-    <span id="autosave-indicator" title="Changes saved automatically">● Saved</span>
-    <button class="header-btn" onclick="openModal('import-modal')"><span>⬆</span> <span>Import</span></button>
-    <button class="header-btn" onclick="loadDatabase()"><span>📂</span> <span>Load DB</span></button>
-    <button class="header-btn" onclick="saveDatabase()"><span>💾</span> <span>Save DB</span></button>
-    <button class="header-btn primary" onclick="exportDecisions()"><span>⬇</span> <span>Export</span></button>
-    <button class="header-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">🌙</button>
   </header>
 
   <div id="body-wrap">
@@ -848,13 +859,13 @@ async function checkAuth() {
             <button class="header-btn" id="toggle-annotations-btn" onclick="toggleInlineAnnotations()" title="Show/hide Claude suggestion blocks inline in text" style="display:none">
               <span id="annotations-icon">👁</span> <span>Annotations</span>
             </button>
-            <span class="dph-status" id="doc-status" title="Path: ../drafts/working-v1-annotated.md">Auto-loading…</span>
+            <span class="dph-status" id="doc-status" title="Path: ../drafts/20260530_1155/working-annotated.md">Auto-loading…</span>
           </div>
           <div class="doc-content" id="doc-content">
             <div class="doc-empty">
               <p>Loading document…</p>
               <p style="font-size:0.8em;color:var(--text-faint);margin-top:8px">
-                Or pick manually: <code>drafts/working-v1-annotated.md</code>
+                Or pick manually: <code>drafts/20260530_1155/working-annotated.md</code>
               </p>
             </div>
           </div>
@@ -894,7 +905,7 @@ async function checkAuth() {
         <div style="background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; box-shadow:0 1px 4px var(--shadow);">
           <div class="section-title">Revision History</div>
           <table class="rev-table" id="rev-table">
-            <thead><tr><th>Date</th><th>Pass</th><th>Type</th><th>Score</th><th>Issues</th></tr></thead>
+            <thead><tr><th>Date</th><th>Pass</th><th>Label</th><th>Avg Score</th><th>Cards</th></tr></thead>
             <tbody id="rev-table-body"><tr><td colspan="5" style="color:var(--text-faint); text-align:center; padding:24px;">No analysis runs yet — import a report to begin.</td></tr></tbody>
           </table>
         </div>
@@ -1040,13 +1051,24 @@ const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 function loadReviewConfig() {
   if (typeof window.REVIEW_CONFIG === 'undefined') return;
   const cfg = window.REVIEW_CONFIG;
-  const el = document.getElementById('ro-version');
-  if (!el) return;
-  const passLabel = cfg.pass_type
-    ? cfg.pass_type.charAt(0).toUpperCase() + cfg.pass_type.slice(1) + ' Pass'
-    : '';
-  const parts = [cfg.dissertation_revision, passLabel, cfg.date].filter(Boolean);
-  el.textContent = parts.join(' · ');
+  const cardMatch = cfg.schema_version && cfg.schema_version.match(/(\d+)cards/);
+  const cardCount = cardMatch ? cardMatch[1] + ' cards' : '';
+  // Full label for Report Overview tab
+  const roEl = document.getElementById('ro-version');
+  if (roEl) {
+    const parts = cfg.label
+      ? [cfg.label, cfg.date, cardCount]
+      : [cfg.dissertation_revision, cfg.pass_type, cfg.date, cardCount];
+    roEl.textContent = parts.filter(Boolean).join(' · ');
+  }
+  // Short label for sticky header subtitle — just pass label + card count
+  const headerEl = document.getElementById('header-pass-label');
+  if (headerEl) {
+    const short = cfg.label
+      ? [cfg.label, cardCount].filter(Boolean).join(' · ')
+      : [cfg.dissertation_revision, cardCount].filter(Boolean).join(' · ');
+    headerEl.textContent = short;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1072,27 +1094,47 @@ async function init() {
     // Try restoring saved session
     // Schema version: bump this string whenever a migration changes the schema in a
     // breaking way. Old cached DBs will be discarded and rebuilt from the bundled data.
-    const SCHEMA_VERSION = 'v7-95cards-2026-06-01';
+    const SCHEMA_VERSION = 'v11-73cards-2026-06-03';
+    // Extract expected card count from schema version string (e.g. "96" from "v8-96cards-...")
+    const expectedCards = parseInt((SCHEMA_VERSION.match(/(\d+)cards/) || [])[1] || '0', 10);
+
+    // Allow ?reset URL parameter to force a clean rebuild (useful when localStorage is poisoned)
+    if (new URLSearchParams(location.search).get('reset') !== null) {
+      localStorage.removeItem('lia-dissertation-db');
+      localStorage.removeItem('lia-dissertation-db-version');
+      localStorage.removeItem(ANCHOR_STORE_KEY);
+      console.info('?reset — localStorage cleared, rebuilding from bundled data.');
+    }
+
     const savedVersion = localStorage.getItem('lia-dissertation-db-version');
     const saved = localStorage.getItem('lia-dissertation-db');
     if (saved && savedVersion === SCHEMA_VERSION) {
       try {
         const arr = Uint8Array.from(JSON.parse(saved));
-        db = new SQL.Database(arr);
-        toast('Session restored from auto-save', 'success');
+        const candidate = new SQL.Database(arr);
+        // Guard: reject a cached DB whose suggestion count doesn't match the schema version
+        const countRes = candidate.exec('SELECT COUNT(*) FROM suggestions');
+        const cachedCount = countRes.length ? countRes[0].values[0][0] : 0;
+        if (expectedCards > 0 && cachedCount < expectedCards) {
+          console.warn(`Cached DB has ${cachedCount} cards but schema expects ${expectedCards} — discarding and rebuilding.`);
+          localStorage.removeItem('lia-dissertation-db');
+          localStorage.removeItem('lia-dissertation-db-version');
+          db = new SQL.Database();
+        } else {
+          db = candidate;
+          toast('Session restored from auto-save', 'success');
+        }
       } catch (restoreErr) {
         console.warn('Could not restore saved session:', restoreErr.message, '— Starting fresh.');
-        toast('Previous session could not be restored. Starting fresh.', 'error');
         db = new SQL.Database();
       }
     } else {
       if (saved && savedVersion !== SCHEMA_VERSION) {
         // Old schema — discard silently and rebuild from bundled data.
-        // Also drop the cached annotated doc (it may hold an old Claude-review header).
         localStorage.removeItem('lia-dissertation-db');
         localStorage.removeItem('lia-dissertation-db-version');
         localStorage.removeItem(ANCHOR_STORE_KEY);
-        console.info('Schema updated to', SCHEMA_VERSION, '— old cached DB + annotated doc discarded, rebuilding from bundled data.');
+        console.info('Schema updated to', SCHEMA_VERSION, '— old cached DB discarded, rebuilding from bundled data.');
       }
       db = new SQL.Database();
     }
@@ -1184,12 +1226,28 @@ function initSchema() {
 // Prefers V2_FEEDBACK_DATA (latest revision) over V1_FEEDBACK_DATA.
 // Both ship as base64-encoded JSON strings.
 function parseFeedbackGlobal() {
-  const raw = window.V2_FEEDBACK_DATA || window.V1_FEEDBACK_DATA;
+  // Auto-detect the latest loaded bundle: scan for F{date}_FEEDBACK_DATA globals first
+  // (date-format v4+), then fall back to legacy V3/V2/V1.
+  const dateVars = Object.keys(window)
+    .filter(k => /^F\d{8}_\d{4}_FEEDBACK_DATA$/.test(k))
+    .sort().reverse(); // newest date first
+  const raw = (dateVars.length ? window[dateVars[0]] : null)
+    || window.V3_FEEDBACK_DATA || window.V2_FEEDBACK_DATA || window.V1_FEEDBACK_DATA;
   if (!raw) return null;
   if (typeof raw === 'object') return raw;
   if (typeof raw === 'string') {
     try {
-      const decoded = typeof atob !== 'undefined' ? atob(raw) : raw;
+      // atob() returns a Latin-1 binary string, not UTF-8 text.
+      // Use TextDecoder to correctly handle Romanian and other non-ASCII characters.
+      let decoded;
+      if (typeof atob !== 'undefined') {
+        const binary = atob(raw);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        decoded = new TextDecoder('utf-8').decode(bytes);
+      } else {
+        decoded = raw;
+      }
       return JSON.parse(decoded);
     }
     catch (e) { console.warn('parseFeedbackGlobal: could not decode/parse feedback data:', e.message); return null; }
@@ -1472,11 +1530,40 @@ function renderOverview() {
     }
   });
 
-  // Revision history table
+  // Revision history table — built from REVIEW_INDEX (persistent) merged with current DB scores
   const tbody = document.getElementById('rev-table-body');
-  if (runs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--text-faint); text-align:center; padding:24px;">No analysis runs yet — import a report to begin.</td></tr>`;
+  const reviewIndex = (window.REVIEW_INDEX && window.REVIEW_INDEX.reviews) || [];
+  const cfg = window.REVIEW_CONFIG || {};
+
+  // Build score map from current DB: analysis_type → score
+  const dbScores = {};
+  for (const r of runs) { if (r.score != null) dbScores[r.analysis_type] = r.score; }
+  const dbAvg = Object.values(dbScores).length
+    ? (Object.values(dbScores).reduce((a,b) => a+b, 0) / Object.values(dbScores).length).toFixed(1)
+    : null;
+  const dbCount = queryOne('SELECT COUNT(*) as c FROM suggestions');
+
+  // If we have a review index, use it as the source of truth for all passes
+  if (reviewIndex.length) {
+    const currentId = cfg.schema_version || '';
+    tbody.innerHTML = safeHTML([...reviewIndex].reverse().map(rev => {
+      const isCurrent = rev.id === (window.REVIEW_INDEX && window.REVIEW_INDEX.latest
+        ? window.REVIEW_INDEX.latest.replace('reviews/','').replace('/review.json','') : '');
+      const avg = isCurrent && dbAvg ? dbAvg : '—';
+      const count = isCurrent && dbCount ? dbCount.c : '—';
+      const activeStyle = isCurrent ? ' style="font-weight:600"' : '';
+      return `<tr${activeStyle}>
+        <td>${esc(rev.date)}</td>
+        <td><span style="text-transform:capitalize">${esc(rev.pass_type)}</span></td>
+        <td>${esc(rev.label)}</td>
+        <td>${avg !== '—' ? avg + '/10' : '—'}</td>
+        <td>${count}</td>
+      </tr>`;
+    }).join(''));
+  } else if (runs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--text-faint); text-align:center; padding:24px;">No analysis runs yet.</td></tr>`;
   } else {
+    // Fallback: derive from DB runs grouped by date
     const runGroups = {};
     for (const r of runs) {
       const key = r.run_date + '_' + r.pass_type;
@@ -2299,7 +2386,7 @@ function restoreAnnotatedDoc() {
     return;
   }
   // 3. Nothing available — show path hint
-  document.getElementById('doc-status').textContent = 'Not loaded — pick: drafts/working-v1-annotated.md';
+  document.getElementById('doc-status').textContent = 'Not loaded — pick: drafts/20260530_1155/working-annotated.md';
 }
 
 function maybeShowAnnotationsToggle() {
@@ -2790,6 +2877,12 @@ function saveDatabase() {
     toast('Failed to save database: ' + err.message, 'error');
     console.error('saveDatabase failed:', err);
   }
+}
+
+function resetDatabase() {
+  if (!confirm('Reset will discard all reviewed/accepted/denied decisions and reload the bundled feedback data fresh.\n\nYour exported decisions file is not affected. Continue?')) return;
+  ['lia-dissertation-db', 'lia-dissertation-db-version', 'lia-dissertation-anchors'].forEach(k => localStorage.removeItem(k));
+  location.reload();
 }
 
 function loadDatabase() {
