@@ -83,7 +83,7 @@
 <div id="content">
   <h2>Cross-lingual Voice Compare</h2>
   <p class="subtitle">
-    Spanish yoga instruction — same passage, three approaches.<br>
+    Spanish yoga instruction — same passage, four approaches.<br>
     Generated 2026-06-19 · Reference: English voice sample
   </p>
 
@@ -115,6 +115,24 @@
     </div>
   </div>
 
+  <!-- SeamlessM4T -->
+  <div class="track">
+    <div class="track-header">
+      <span class="track-label">SeamlessM4T v2 — speech-to-speech translation</span>
+      <span class="badge" style="background:#2d1b69;color:#a78bfa">S2ST</span>
+    </div>
+    <p class="track-meta">
+      Your English speech (20s) fed directly into Meta's SeamlessM4T v2 Large → Spanish audio out.<br>
+      Preserves prosody &amp; rhythm from original utterance · Does NOT clone timbre · 4s gen time · 11s output
+    </p>
+    <audio controls preload="none" src="seamless_m4t_es.wav"></audio>
+    <div class="sim-row">
+      <span class="sim-label">Speaker similarity vs reference</span>
+      <div class="sim-bar-wrap"><div class="sim-bar" style="width:58.3%;background:var(--red)"></div></div>
+      <span class="sim-val" style="color:var(--red)">0.583</span>
+    </div>
+  </div>
+
   <!-- Elvira -->
   <div class="track">
     <div class="track-header">
@@ -136,9 +154,8 @@
   <div class="note">
     <strong>What the similarity score means:</strong> resemblyzer cosine similarity between d-vector embeddings of each output vs the original English reference.
     0.946 = forensically the same speaker · 0.588 = clearly different speaker.<br><br>
-    <strong>SeamlessM4T v2 (speech-to-speech translation)</strong> was not generated this run — GPU VRAM was occupied (~9GB by Ollama).
-    It would translate the English speech directly to Spanish preserving prosody but not voice identity.
-    Run with free VRAM to add that track.
+    <strong>SeamlessM4T v2</strong>: speech-to-speech translation — your English speech translated to Spanish preserving pacing and rhythm, but using the model's own internal Spanish voice (not yours). Similarity 0.583 = different speaker.
+    <strong>CosyVoice 2</strong>: cross-lingual timbre cloning (Apache-2.0, 4GB VRAM) — the best available option for cloning your voice across languages. Currently blocked on Windows (pynini build). WSL2 install in progress.
   </div>
 </div>
 
