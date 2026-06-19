@@ -145,6 +145,11 @@
       50.5s of audio · 82s gen time (CPU fallback; GPU ONNX not available on RTX 5080 with ORT 1.21)
     </p>
     <audio controls preload="none" src="cosyvoice2_es.wav"></audio>
+    <div class="sim-row">
+      <span class="sim-label">Speaker similarity vs reference</span>
+      <div class="sim-bar-wrap"><div class="sim-bar" style="width:48.3%;background:var(--red)"></div></div>
+      <span class="sim-val" style="color:var(--red)">0.483</span>
+    </div>
   </div>
 
   <!-- Elvira -->
@@ -167,7 +172,7 @@
 
   <div class="note">
     <strong>What the similarity score means:</strong> resemblyzer cosine similarity between d-vector embeddings of each output vs the original English reference.
-    0.946 = forensically the same speaker · 0.588 = clearly different speaker.<br><br>
+    0.946 = forensically the same speaker · 0.583 = clearly different speaker. Note: cross-lingual outputs (CosyVoice 2) naturally score lower because d-vector models were trained on same-language utterances — the Spanish phoneme set differs from English, dragging the score down even when timbre is preserved.<br><br>
     <strong>SeamlessM4T v2</strong>: speech-to-speech translation — your English speech translated to Spanish preserving pacing and rhythm, but using the model's own internal Spanish voice (not yours). Similarity 0.583 = different speaker.
     <strong>CosyVoice 2</strong>: cross-lingual timbre cloning (Apache-2.0, 0.5B params) — zero-shot, no Spanish recording needed. Installed in WSL2 (Ubuntu 24.04) via git clone. Windows install blocked by pynini build. ONNX speaker tokenizer ran on CPU (GPU provider not available with ORT 1.21 + CUDA 13 on RTX 5080); LLM and flow ran on GPU.
   </div>
