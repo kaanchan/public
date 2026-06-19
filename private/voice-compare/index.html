@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Compare — Private</title>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --border: #334155;
+    --text: #f1f5f9; --muted: #94a3b8; --accent: #38bdf8;
+    --green: #34d399; --gold: #fbbf24; --red: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; min-height: 100vh; }
+
+  /* ── Gate ── */
+  #gate {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 2rem; gap: 1.2rem;
+  }
+  #gate h1 { font-size: 1.1rem; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+  #gate input {
+    padding: .75rem 1.2rem; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 1.1rem;
+    text-align: center; width: 100%; max-width: 260px; letter-spacing: .1em;
+  }
+  #gate input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  #gate button {
+    padding: .7rem 2rem; border-radius: 8px; border: none;
+    background: var(--accent); color: #0f172a; font-weight: 700; font-size: 1rem;
+    cursor: pointer; width: 100%; max-width: 260px;
+  }
+  #gate button:active { opacity: .85; }
+  #gate-err { color: var(--red); font-size: .85rem; min-height: 1.2em; }
+
+  /* ── Content ── */
+  #content { display: none; padding: 2rem 1.2rem 4rem; max-width: 720px; margin: auto; }
+  h2 { font-size: 1.1rem; color: var(--accent); margin-bottom: .25rem; }
+  .subtitle { color: var(--muted); font-size: .8rem; margin-bottom: 2rem; line-height: 1.6; }
+
+  .track {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.2rem 1.4rem; margin-bottom: 1.1rem;
+  }
+  .track-header { display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem; flex-wrap: wrap; }
+  .track-label { font-weight: 600; font-size: .95rem; }
+  .badge {
+    font-size: .7rem; padding: .2rem .55rem; border-radius: 999px; font-weight: 600;
+    letter-spacing: .03em; white-space: nowrap;
+  }
+  .badge-ref  { background: #1e3a5f; color: var(--accent); }
+  .badge-clone { background: #14532d; color: var(--green); }
+  .badge-bench { background: #3b2a00; color: var(--gold); }
+  .track-meta { color: var(--muted); font-size: .76rem; margin-bottom: .75rem; line-height: 1.6; }
+  audio { width: 100%; height: 44px; border-radius: 6px; }
+
+  .sim-row { display: flex; align-items: center; gap: .5rem; margin-top: .6rem; }
+  .sim-label { font-size: .72rem; color: var(--muted); }
+  .sim-bar-wrap { flex: 1; background: #1e293b; border-radius: 999px; height: 6px; overflow: hidden; }
+  .sim-bar { height: 100%; border-radius: 999px; }
+  .sim-val { font-size: .72rem; font-weight: 700; width: 3.5rem; text-align: right; }
+
+  .note {
+    margin-top: 2rem; background: #0f172a; border: 1px solid var(--border);
+    border-radius: 8px; padding: .9rem 1.1rem;
+    font-size: .76rem; color: var(--muted); line-height: 1.7;
+  }
+  .note strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- ── Password gate ── -->
+<div id="gate">
+  <h1>Private — Voice Samples</h1>
+  <input type="password" id="pw" placeholder="passphrase" autocomplete="off"
+         onkeydown="if(event.key==='Enter') unlock()">
+  <button onclick="unlock()">Listen</button>
+  <span id="gate-err"></span>
+</div>
+
+<!-- ── Audio content ── -->
+<div id="content">
+  <h2>Cross-lingual Voice Compare</h2>
+  <p class="subtitle">
+    Spanish yoga instruction — same passage, three approaches.<br>
+    Generated 2026-06-19 · Reference: English voice sample
+  </p>
+
+  <!-- Reference -->
+  <div class="track">
+    <div class="track-header">
+      <span class="track-label">Reference — English (original voice)</span>
+      <span class="badge badge-ref">SOURCE</span>
+    </div>
+    <p class="track-meta">20s trim of the original English recording. This is the voice being cloned.</p>
+    <audio controls preload="none" src="reference_20s.wav"></audio>
+  </div>
+
+  <!-- F5-TTS -->
+  <div class="track">
+    <div class="track-header">
+      <span class="track-label">F5-TTS — zero-shot voice clone</span>
+      <span class="badge badge-clone">TIMBRE CLONE</span>
+    </div>
+    <p class="track-meta">
+      Text → Spanish audio using the English voice as a reference template.<br>
+      Preserves voice identity (timbre) · English phoneme accent on Spanish words · 44s gen time
+    </p>
+    <audio controls preload="none" src="f5tts_es.wav"></audio>
+    <div class="sim-row">
+      <span class="sim-label">Speaker similarity vs reference</span>
+      <div class="sim-bar-wrap"><div class="sim-bar" style="width:94.6%;background:var(--green)"></div></div>
+      <span class="sim-val" style="color:var(--green)">0.946</span>
+    </div>
+  </div>
+
+  <!-- Elvira -->
+  <div class="track">
+    <div class="track-header">
+      <span class="track-label">Edge TTS — Elvira (es-ES-ElviraNeural)</span>
+      <span class="badge badge-bench">BENCHMARK</span>
+    </div>
+    <p class="track-meta">
+      Microsoft's professional Spanish neural voice. No voice cloning — different speaker entirely.<br>
+      Native Spanish phonemes · Natural pacing · 2.8s gen time
+    </p>
+    <audio controls preload="none" src="elvira_es.wav"></audio>
+    <div class="sim-row">
+      <span class="sim-label">Speaker similarity vs reference</span>
+      <div class="sim-bar-wrap"><div class="sim-bar" style="width:58.8%;background:var(--gold)"></div></div>
+      <span class="sim-val" style="color:var(--gold)">0.588</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>What the similarity score means:</strong> resemblyzer cosine similarity between d-vector embeddings of each output vs the original English reference.
+    0.946 = forensically the same speaker · 0.588 = clearly different speaker.<br><br>
+    <strong>SeamlessM4T v2 (speech-to-speech translation)</strong> was not generated this run — GPU VRAM was occupied (~9GB by Ollama).
+    It would translate the English speech directly to Spanish preserving prosody but not voice identity.
+    Run with free VRAM to add that track.
+  </div>
+</div>
+
+<script>
+  const PW = 'kaanchan';
+  // Stay unlocked within the session
+  if (sessionStorage.getItem('vc_auth') === '1') show();
+
+  function unlock() {
+    if (document.getElementById('pw').value === PW) {
+      sessionStorage.setItem('vc_auth', '1');
+      show();
+    } else {
+      document.getElementById('gate-err').textContent = 'Try again.';
+      document.getElementById('pw').value = '';
+      document.getElementById('pw').focus();
+    }
+  }
+
+  function show() {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+  }
+</script>
+</body>
+</html>
