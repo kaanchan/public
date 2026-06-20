@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mission Control — real-time-translation</title>
+<style>
+  :root {
+    --bg: #060d1a;
+    --surface: #0f1e33;
+    --card: #142035;
+    --card-hover: #1a2d48;
+    --border: #1e3a5f;
+    --border-glow: #2563eb44;
+    --text: #e8f0fe;
+    --muted: #7b94b8;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --green: #10b981;
+    --gold: #f59e0b;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+    --pink: #ec4899;
+    --orange: #f97316;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(ellipse at 20% 20%, #0d2545 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, #0d1f3a 0%, transparent 50%);
+    z-index: 0;
+    animation: bgpulse 12s ease-in-out infinite alternate;
+  }
+  @keyframes bgpulse {
+    from { opacity: 0.6; transform: scale(1); }
+    to   { opacity: 1;   transform: scale(1.05); }
+  }
+
+  /* ── Gate ── */
+  #gate {
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; gap: 1.2rem; padding: 2rem;
+  }
+  .gate-logo {
+    font-size: 2rem; letter-spacing: .15em; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: .5rem;
+  }
+  #gate h1 { font-size: .9rem; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+  #gate input {
+    padding: .8rem 1.4rem; border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface); color: var(--text);
+    font-size: 1.1rem; text-align: center;
+    width: 100%; max-width: 280px; letter-spacing: .15em;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  #gate input:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--border-glow);
+  }
+  #gate button {
+    padding: .75rem 2.4rem; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; font-weight: 700; font-size: 1rem;
+    cursor: pointer; width: 100%; max-width: 280px;
+    transition: opacity .2s, transform .1s;
+  }
+  #gate button:hover { opacity: .9; }
+  #gate button:active { transform: scale(.98); }
+  #gate-err { color: var(--red); font-size: .85rem; min-height: 1.2em; }
+
+  /* ── Main content ── */
+  #content { display: none; position: relative; z-index: 10; }
+
+  .page-header {
+    padding: 3rem 2rem 2rem;
+    max-width: 1200px; margin: auto;
+    display: flex; flex-direction: column; gap: .5rem;
+  }
+  .header-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  .header-title {
+    font-size: 1.8rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--text) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header-sub { color: var(--muted); font-size: .88rem; margin-top: .3rem; line-height: 1.6; }
+  .quota-badge {
+    background: linear-gradient(135deg, #065f46, #064e3b);
+    border: 1px solid #10b98133;
+    color: var(--green); padding: .4rem 1rem; border-radius: 999px;
+    font-size: .78rem; font-weight: 700; letter-spacing: .05em; white-space: nowrap;
+  }
+
+  /* Score legend */
+  .legend {
+    display: flex; gap: 1.5rem; flex-wrap: wrap;
+    padding: 0 2rem 1.5rem; max-width: 1200px; margin: auto;
+  }
+  .legend-item { display: flex; align-items: center; gap: .4rem; font-size: .75rem; color: var(--muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ── Cards grid ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+    gap: 1.2rem;
+    padding: 0 2rem 2rem;
+    max-width: 1200px; margin: auto;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.6rem;
+    transition: border-color .25s, background .25s, box-shadow .25s;
+    position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, var(--card-accent, var(--accent)), transparent);
+    opacity: 0; transition: opacity .3s;
+  }
+  .card:hover { background: var(--card-hover); border-color: var(--accent); box-shadow: 0 4px 32px #3b82f622; }
+  .card:hover::before { opacity: 1; }
+
+  /* Decision states */
+  .card.yes { border-color: var(--green); box-shadow: 0 0 0 1px var(--green), 0 4px 24px #10b98122; background: #0d2a1e; }
+  .card.yes::before { background: linear-gradient(90deg, transparent, var(--green), transparent); opacity: 1; }
+  .card.no  { border-color: #374151; opacity: .55; filter: grayscale(.5); }
+  .card.adj { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 4px 24px #f59e0b22; background: #1e1500; }
+  .card.adj::before { background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 1; }
+
+  .card-top { display: flex; align-items: flex-start; gap: .75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  .task-num {
+    font-size: .7rem; font-weight: 700; color: var(--muted);
+    background: #ffffff0d; padding: .25rem .6rem; border-radius: 6px;
+    letter-spacing: .08em; white-space: nowrap; margin-top: .1rem;
+  }
+  .task-title { font-size: 1.05rem; font-weight: 700; color: var(--text); flex: 1; line-height: 1.35; }
+  .cat-badge {
+    font-size: .67rem; padding: .22rem .6rem; border-radius: 999px;
+    font-weight: 700; letter-spacing: .04em; white-space: nowrap;
+    margin-top: .1rem;
+  }
+
+  .task-desc { color: var(--muted); font-size: .83rem; line-height: 1.65; margin-bottom: 1rem; }
+  .task-desc strong { color: var(--text); }
+
+  .meta-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
+  .meta-pill {
+    font-size: .7rem; padding: .2rem .55rem; border-radius: 6px;
+    background: #ffffff08; color: var(--muted); border: 1px solid var(--border);
+  }
+
+  .stars { display: flex; gap: 2px; }
+  .star { font-size: .7rem; }
+  .meta-label { font-size: .7rem; color: var(--muted); }
+
+  /* Affect list */
+  .affects { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+  .affect-chip {
+    font-size: .68rem; padding: .15rem .5rem; border-radius: 5px;
+    background: #1e3a5f55; color: var(--accent2); border: 1px solid var(--border);
+  }
+
+  /* Decision buttons */
+  .decision-row { display: flex; gap: .55rem; }
+  .btn-decision {
+    flex: 1; padding: .55rem; border-radius: 9px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted);
+    font-size: .8rem; font-weight: 600; cursor: pointer;
+    transition: all .18s; letter-spacing: .03em;
+  }
+  .btn-yes  { border-color: #10b98133; color: var(--green); }
+  .btn-no   { border-color: #ef444433; color: var(--red);   }
+  .btn-adj  { border-color: #f59e0b33; color: var(--gold);  }
+
+  .btn-yes:hover  { background: #10b98122; border-color: var(--green); }
+  .btn-no:hover   { background: #ef444422; border-color: var(--red);   }
+  .btn-adj:hover  { background: #f59e0b22; border-color: var(--gold);  }
+
+  .card.yes .btn-yes { background: #10b98133; border-color: var(--green); color: var(--green); }
+  .card.no  .btn-no  { background: #ef444433; border-color: var(--red);   color: var(--red);   }
+  .card.adj .btn-adj { background: #f59e0b33; border-color: var(--gold);  color: var(--gold);  }
+
+  .adj-input {
+    display: none; width: 100%; margin-top: .75rem;
+    background: var(--surface); border: 1px solid var(--gold);
+    border-radius: 8px; padding: .55rem .8rem;
+    color: var(--text); font-size: .8rem; resize: vertical; min-height: 56px;
+    font-family: inherit;
+  }
+  .adj-input:focus { outline: none; box-shadow: 0 0 0 2px #f59e0b33; }
+  .card.adj .adj-input { display: block; }
+
+  /* ── Summary panel ── */
+  .summary-wrap {
+    max-width: 1200px; margin: 1rem auto 0; padding: 0 2rem 4rem;
+  }
+  .summary-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 1.8rem 2rem;
+  }
+  .summary-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem; }
+  .summary-title { font-size: 1rem; font-weight: 700; color: var(--accent2); }
+  .tally { display: flex; gap: .75rem; }
+  .tally-pill {
+    font-size: .75rem; font-weight: 700; padding: .3rem .75rem; border-radius: 999px;
+  }
+  .tally-yes { background: #10b98122; color: var(--green); border: 1px solid #10b98133; }
+  .tally-adj { background: #f59e0b22; color: var(--gold);  border: 1px solid #f59e0b33; }
+  .tally-no  { background: #ef444422; color: #9ca3af;      border: 1px solid #37415133; }
+
+  .output-box {
+    background: #060d1a; border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.2rem;
+    font-family: 'Courier New', monospace; font-size: .78rem;
+    color: var(--muted); line-height: 1.7; white-space: pre-wrap;
+    min-height: 80px;
+  }
+  .copy-row { display: flex; justify-content: flex-end; margin-top: .8rem; gap: .75rem; }
+  .btn-copy, .btn-begin {
+    padding: .6rem 1.4rem; border-radius: 9px; border: none;
+    font-size: .82rem; font-weight: 700; cursor: pointer; transition: opacity .2s;
+  }
+  .btn-copy  { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+  .btn-begin { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+  .btn-copy:hover, .btn-begin:hover { opacity: .85; }
+
+  /* Category colors */
+  .cat-voice    { background: #4f1d96; color: #c4b5fd; }
+  .cat-stt      { background: #0c4a6e; color: #7dd3fc; }
+  .cat-ux       { background: #064e3b; color: #6ee7b7; }
+  .cat-infra    { background: #1e3a5f; color: #93c5fd; }
+  .cat-i18n     { background: #4a1d0c; color: #fdba74; }
+  .cat-ai       { background: #3b0764; color: #e879f9; }
+  .cat-cross    { background: #1c1917; color: #a8a29e; }
+  .cat-analytics{ background: #0f172a; color: #38bdf8; }
+
+  @media (max-width: 620px) {
+    .grid { grid-template-columns: 1fr; padding: 0 1rem 2rem; }
+    .page-header, .legend, .summary-wrap { padding-left: 1rem; padding-right: 1rem; }
+    .header-title { font-size: 1.4rem; }
+  }
+
+  /* Rank accent bar colors per card */
+  .card[data-cat="voice"]     { --card-accent: #8b5cf6; }
+  .card[data-cat="stt"]       { --card-accent: #38bdf8; }
+  .card[data-cat="ux"]        { --card-accent: #10b981; }
+  .card[data-cat="infra"]     { --card-accent: #3b82f6; }
+  .card[data-cat="i18n"]      { --card-accent: #f97316; }
+  .card[data-cat="ai"]        { --card-accent: #ec4899; }
+  .card[data-cat="cross"]     { --card-accent: #a8a29e; }
+  .card[data-cat="analytics"] { --card-accent: #06b6d4; }
+</style>
+</head>
+<body>
+
+<!-- ── Password gate ── -->
+<div id="gate">
+  <div class="gate-logo">real-time-translation</div>
+  <h1>Mission Control — Private</h1>
+  <input type="password" id="pw" placeholder="passphrase" autocomplete="off"
+         onkeydown="if(event.key==='Enter') unlock()">
+  <button onclick="unlock()">Enter</button>
+  <span id="gate-err"></span>
+</div>
+
+<!-- ── Main content ── -->
+<div id="content">
+
+  <div class="page-header">
+    <div class="header-top">
+      <div>
+        <div class="header-title">10 Ambitious Tasks</div>
+        <div class="header-sub">
+          Quota reset · June 2026 · Vote Yes / No / Adjust on each — then Claude begins all non-No tasks in parallel.
+        </div>
+      </div>
+      <span class="quota-badge">⚡ Full Quota Available</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="dot" style="background:var(--purple)"></div> Voice Quality</div>
+    <div class="legend-item"><div class="dot" style="background:var(--accent2)"></div> STT / Latency</div>
+    <div class="legend-item"><div class="dot" style="background:var(--green)"></div> UX / Workflow</div>
+    <div class="legend-item"><div class="dot" style="background:var(--accent)"></div> Infrastructure</div>
+    <div class="legend-item"><div class="dot" style="background:var(--orange)"></div> Internationalization</div>
+    <div class="legend-item"><div class="dot" style="background:var(--pink)"></div> AI / Content</div>
+    <div class="legend-item"><div class="dot" style="background:var(--accent2)"></div> Analytics</div>
+  </div>
+
+  <div class="grid">
+
+    <!-- TASK 1 -->
+    <div class="card" data-id="1" data-cat="voice" data-title="CosyVoice 2 Real-Time TTS Engine">
+      <div class="card-top">
+        <span class="task-num">01</span>
+        <span class="task-title">CosyVoice 2 Real-Time TTS Engine</span>
+        <span class="cat-badge cat-voice">Voice Quality</span>
+      </div>
+      <p class="task-desc">
+        CosyVoice 2 is installed in WSL2 and proven to generate 50s of cross-lingual speech. The missing piece: a
+        <strong>persistent inference server</strong> (stdin/stdout or Unix socket) so the Windows pipeline can stream
+        translated text in and receive WAV out without launching a new Python process per utterance.
+        Wire it as a proper <code>CosyVoice2TTSEngine</code> in <code>app/engines/tts/</code>, add a
+        <code>voice-only-cosyvoice2</code> config profile, and benchmark RTF.
+        <strong>This is the highest-leverage voice quality win currently achievable without a Spanish recording.</strong>
+      </p>
+      <div class="meta-row">
+        <span class="meta-label">Impact</span>
+        <div class="stars">⭐⭐⭐⭐⭐</div>
+        <span class="meta-pill">Effort: 2–3 days</span>
+        <span class="meta-pill">GH new issue</span>
+      </div>
+      <div class="affects">
+        <span class="affect-chip">app/engines/tts/</span>
+        <span class="affect-chip">WSL2 subprocess bridge</span>
+        <span class="affect-chip">config.yaml</span>
+      </div>
+      <div class="decision-row">
+        <button class="btn-decision btn-yes" onclick="decide(1,'yes')">✓ YES</button>
+        <button class="btn-decision btn-no"  onclick="decide(1,'no')">✕ NO</button>
+        <button class="btn-decision btn-adj" onclick="decide(1,'adj')">⟳ ADJUST</button>
+      </div>
+      <textarea class="adj-input" placeholder="Your adjustment note…" oninput="updateOutput()"></textarea>
+    </div>
+
+    <!-- TASK 2 -->
+    <div class="card" data-id="2" data-cat="stt" data-title="WhisperLiveKit SimulStreaming Engine (GH #33)">
+      <div class="card-top">
+        <span class="task-num">02</span>
+        <span class="task-title">WhisperLiveKit SimulStreaming Engine</span>
+        <span class="cat-badge cat-stt">STT / Latency</span>
+      </div>
+      <p class="task-desc">
+        Open issue <strong>#33</strong>. WhisperLiveKit's AlignAtt simultaneous translation achieves
+        <strong>~5× lower STT latency</strong> than LocalAgreement-2 by predicting words before the utterance ends.
+        Implement <code>WhisperLiveKitEngine</code> in <code>app/engines/stt/</code> mirroring the existing
+        <code>whisper_streaming_engine.py</code> interface. Add a <code>bench-wlk</code> config profile and run
+        the benchmark script to compare against the current subtitle-streaming baseline.
+      </p>
+      <div class="meta-row">
+        <span class="meta-label">Impact</span>
+        <div class="stars">⭐⭐⭐⭐⭐</div>
+        <span class="meta-pill">Effort: 1–2 days</span>
+        <span class="meta-pill">GH #33</span>
+      </div>
+      <div class="affects">
+        <span class="affect-chip">app/engines/stt/</span>
+        <span class="affect-chip">config.yaml</span>
+        <span class="affect-chip">pyproject.toml</span>
+      </div>
+      <div class="decision-row">
+        <button class="btn-decision btn-yes" onclick="decide(2,'yes')">✓ YES</button>
+        <button class="btn-decision btn-no"  onclick="decide(2,'no')">✕ NO</button>
+        <button class="btn-decision btn-adj" onclick="decide(2,'adj')">⟳ ADJUST</button>
+      </div>
+      <textarea class="adj-input" placeholder="Your adjustment note…" oninput="updateOutput()"></textarea>
+    </div>
+
+    <!-- TASK 3 -->
+    <div class="card" data-id="3" data-cat="i18n" data-title="Multi-Language Simultaneous Broadcast">
+      <div class="card-top">
+        <span class="task-num">03</span>
+        <span class="task-title">Multi-Language Simultaneous Broadcast</span>
+        <span class="cat-badge cat-i18n">Internationalization</span>
+      </div>
+      <p class="task-desc">
+        One microphone input, <strong>multiple parallel translation+TTS streams</strong> — Spanish and Romanian simultaneously.
+        Extend <code>CaptionBroadcaster</code> to support per-language WebSocket channels
+        (<code>ws://host/es</code>, <code>ws://host/ro</code>). Students each open the overlay in their
+        language; English-speaking participants get the original. Requires parallel translation tasks and
+        language-keyed TTS queues. Makes the pipeline genuinely multi-audience.
+      </p>
+      <div class="meta-row">
+        <span class="meta-label">Impact</span>
+        <div class="stars">⭐⭐⭐⭐⭐</div>
+        <span class="meta-pill">Effort: 3–4 days</span>
+        <span class="meta-pill">GH new issue</span>
+      </div>
+      <div class="affects">
+        <span class="affect-chip">app/caption_broadcaster.py</span>
+        <span class="affect-chip">app/live_yoga_pipeline.py</span>
+        <span class="affect-chip">overlay.user.js</span>
+      </div>
+      <div class="decision-row">
+        <button class="btn-decision btn-yes" onclick="decide(3,'yes')">✓ YES</button>
+        <button class="btn-decision btn-no"  onclick="decide(3,'no')">✕ NO</button>
+        <button class="btn-decision btn-adj" onclick="decide(3,'adj')">⟳ ADJUST</button>
+      </div>
+      <textarea class="adj-input" placeholder="Your adjustment note…" oninput="updateOutput()"></textarea>
+    </div>
+
+    <!-- TASK 4 -->
+    <div class="card" data-id="4" data-cat="ux" data-title="OBS / Zoom Live Caption Integration">
+      <div class="card-top">
+        <span class="task-num">04</span>
+        <span class="task-title">OBS / Zoom Live Caption Integration</span>
+        <span class="cat-badge cat-ux">UX / Workflow</span>
+      </div>
+      <p class="task-desc">
+        The existing WebSocket caption system broadcasts to browser, but online students on Zoom or YouTube
+        get no captions. Build an <strong>OBS browser source</strong> that renders captions as a transparent
+        overlay burned into the video feed — zero extra tools for students. Also: a standalone
+        <strong>floating caption window</strong> (Electron or PyWebView) for local in-room display.
+        Connects the invisible pipeline work to actual class delivery.
+      </p>
+      <div class="meta-row">
+        <span class="meta-label">Impact</span>
+        <div class="stars">⭐⭐⭐⭐⭐</div>
+        <span class="meta-pill">Effort: 2–3 days</span>
+        <span class="meta-pill">GH new issue</span>
+      </div>
+      <div class="affects">
+        <span class="affect-chip">app/web_ui/</span>
+        <span class="affect-chip">new: overlay-obs.html</span>
+        <span class="affect-chip">docs/</span>
+      </div>
+      <div class="decision-row">
+        <button class="btn-decision btn-yes" onclick="decide(4,'yes')">✓ YES</button>
+        <button class="btn-decision btn-no"  onclick="decide(4,'no')">✕ NO</button>
+        <button class="btn-decision btn-adj" onclick="decide(4,'adj')">⟳ ADJUST</button>
+      </div>
+      <textarea class="adj-input" placeholder="Your adjustment note…" oninput="updateOutput()"></textarea>
+    </div>
+
+    <!-- TASK 5 -->
+    <div class="card" data-id="5" data-cat="cross" data-title="Auto Class Notes → yogicapproach/events">
+      <div class="card-top">
+        <span class="task-num">05</span>
+        <span class="task-title">Auto Class Notes → yogicapproach/events</span>
+        <span class="cat-badge" style="background:#1c1917;color:#a8a29e;">Cross-Repo</span>
+      </div>
+      <p class="task-desc">
+        After each pipeline session ends, <strong>auto-generate structured class notes</strong> from the
+        caption JSONL log: timestamps, Sanskrit terms used, key translated phrases, session duration.
+        Publish as a Markdown file committed to the <code>yogicapproach/events</code> repo with a
+        consistent naming convention so students can review what was said after class.
+        Extend <code>app/session_audit.py</code> with an <code>--export-notes</code> flag and a
+        post-session hook in the pipeline.
+      </p>
+      <div class="meta-row">
+        <span class="meta-label">Impact</span>
+        <div class="stars">⭐⭐⭐⭐</div>
+        <span class="meta-pill">Effort: 2 days</span>
+        <span class="meta-pill">GH new issue + yogicapproach issue</span>
+      </div>
+      <div class="affects">
+        <span class="affect-chip">app/session_audit.py</span>
+        <span class="affect-chip">yogicapproach/events</span>
+        <span class="affect-chip">data/glossary/</span>
+      </div>
+      <div class="decision-row">
+        <button class="btn-decision btn-yes" onclick="decide(5,'yes')">✓ YES</button>
+        <button class="btn-decision btn-no"  onclick="decide(5,'no')">✕ NO</button>
+        <button class="btn-decision btn-adj" onclick="decide(5,'adj')">⟳ ADJUST</button>
+      </div>
+      <textarea class="adj-input" placeholder="Your adjustment note…" oninput="updateOutput()"></textarea>
+    </div>
+
+    <!-- TASK 6 -->
+    <div class="card" data-id="6" data-cat="voice" data-title="Spanish Reference Recording + Voice Adapter Training">
+      <div class="card-top">
+        <span class="task-num">06</span>
+        <span class="task-title">Spanish Reference Recording + Voice Adapter</span>
+        <span class="cat-badge cat-voice">Voice Quality</span>
+      </div>
+      <p class="task-desc">
+        The reading guide is ready (<code>data/voice-samples/es_reading_guide.html</code>) and the capture
+        script supports <code>--lang es</code>. This task <strong>requires you at the mic for ~5 minutes</strong>,
+        then Claude takes over: resemble-score the clips, select the best 10s reference, and — ambitiously —
+        fine-tune a voice adapter layer on (your Spanish audio, target text) pairs so F5-TTS outputs
+        native Spanish phonemes with your timbre.
+        <strong>The definitive fix for "sounds like me but wrong accent."</strong>
+      </p>
+      <div class="meta-row">
+        <span class="meta-label">Impact</span>
+        <div class="stars">⭐⭐⭐⭐⭐</div>
+        <span class="meta-pill">Effort: 1 day (after recording)</span>
+        <span class="meta-pill">GH #106</span>
+      </div>
+      <div class="affects">
+        <span class="affect-chip">scripts/capture_voice.py --lang es</span>
+        <span class="affect-chip">data/voice-samples/</span>
+        <span class="affect-chip">app/engines/tts/f5_tts_engine.py</span>
+      </div>
+      <div class="decision-row">
+        <button class="btn-decision btn-yes" onclick="decide(6,'yes')">✓ YES</button>
+        <button class="btn-decision btn-no"  onclick="decide(6,'no')">✕ NO</button>
+        <button class="btn-decision btn-adj" onclick="decide(6,'adj')">⟳ ADJUST</button>
+      </div>
+      <textarea class="adj-input" placeholder="Your adjustment note…" oninput="updateOutput()"></textarea>
+    </div>
+
+    <!-- TASK 7 -->
+    <div class="card" data-id="7" data-cat="infra" data-title="Latency CI Benchmark — GitHub Actions + Pages">
+      <div class="card-top">
+        <span class="task-num">07</span>
+        <span class="task-title">Latency CI Benchmark — GitHub Actions + Trend Chart</span>
+        <span class="cat-badge cat-infra">Infrastructure</span>
+      </div>
+      <p class="task-desc">
+        On every push to <code>main</code>, GitHub Actions runs the pipeline with
+        <code>MockSTTEngine + MockTTSEngine</code> on a fixed test utterance set, measures
+        per-stage latency (capture→STT→translate→TTS), and compares against the historical baseline.
+        A <strong>trend chart is published to GitHub Pages</strong> so you can see if a new TTS or
+        translation engine regressed latency. Fails CI if any stage exceeds a 15% regression.
+      </p>
+      <div class="meta-row">
+        <span class="meta-label">Impact</span>
+        <div class="stars">⭐⭐⭐⭐</div>
+        <span class="meta-pill">Effort: 2 days</span>
+        <span class="meta-pill">GH new issue</span>
+      </div>
+      <div class="affects">
+        <span class="affect-chip">.github/workflows/</span>
+        <span class="affect-chip">scripts/benchmark_pipeline.py</span>
+        <span class="affect-chip">kaanchan/public (Pages)</span>
+      </div>
+      <div class="decision-row">
+        <button class="btn-decision btn-yes" onclick="decide(7,'yes')">✓ YES</button>
+        <button class="btn-decision btn-no"  onclick="decide(7,'no')">✕ NO</button>
+        <button class="btn-decision btn-adj" onclick="decide(7,'adj')">⟳ ADJUST</button>
+      </div>
+      <textarea class="adj-input" placeholder="Your adjustment note…" oninput="updateOutput()"></textarea>
+    </div>
+
+    <!-- TASK 8 -->
+    <div class="card" data-id="8" data-cat="analytics" data-title="Session Analytics Dashboard">
+      <div class="card-top">
+        <span class="task-num">08</span>
+        <span class="task-title">Session Analytics Dashboard</span>
+        <span class="cat-badge cat-analytics">Analytics</span>
+      </div>
+      <p class="task-desc">
+        Build a web dashboard that reads from <code>data/sessions/*.jsonl</code> and renders:
+        per-stage latency heatmaps, translation quality trends, Sanskrit term frequency word cloud,
+        missed glossary coverage, and session-over-session comparison.
+        Deployed as a password-gated page at <code>kaanchan.github.io/public/private/analytics/</code>
+        with a one-command export script. Extends <code>app/session_audit.py</code>
+        with <code>--export-dashboard</code>.
+      </p>
+      <div class="meta-row">
+        <span class="meta-label">Impact</span>
+        <div class="stars">⭐⭐⭐⭐</div>
+        <span class="meta-pill">Effort: 2–3 days</span>
+        <span class="meta-pill">GH new issue</span>
+      </div>
+      <div class="affects">
+        <span class="affect-chip">app/session_audit.py</span>
+        <span class="affect-chip">kaanchan/public/private/analytics/</span>
+        <span class="affect-chip">data/sessions/</span>
+      </div>
+      <div class="decision-row">
+        <button class="btn-decision btn-yes" onclick="decide(8,'yes')">✓ YES</button>
+        <button class="btn-decision btn-no"  onclick="decide(8,'no')">✕ NO</button>
+        <button class="btn-decision btn-adj" onclick="decide(8,'adj')">⟳ ADJUST</button>
+      </div>
+      <textarea class="adj-input" placeholder="Your adjustment note…" oninput="updateOutput()"></textarea>
+    </div>
+
+    <!-- TASK 9 -->
+    <div class="card" data-id="9" data-cat="ai" data-title="Yoga Glossary LLM Auto-Expansion Pipeline">
+      <div class="card-top">
+        <span class="task-num">09</span>
+        <span class="task-title">Yoga Glossary LLM Auto-Expansion</span>
+        <span class="cat-badge cat-ai">AI / Content</span>
+      </div>
+      <p class="task-desc">
+        <code>data/glossary/yoga_terms.yaml</code> drives the translation system prompt but is manually maintained.
+        Build a <strong>Claude API pipeline</strong> that: (a) reads current glossary + session logs
+        to identify missing Sanskrit terms, (b) generates translations + pronunciation guides + context notes
+        for each missing term, (c) proposes additions in a PR for review.
+        Run weekly as a GitHub Actions cron job. Also add per-yoga-style filtering
+        (Hatha, Kundalini, Vinyasa, Nidra).
+      </p>
+      <div class="meta-row">
+        <span class="meta-label">Impact</span>
+        <div class="stars">⭐⭐⭐⭐</div>
+        <span class="meta-pill">Effort: 1–2 days</span>
+        <span class="meta-pill">GH new issue</span>
+      </div>
+      <div class="affects">
+        <span class="affect-chip">data/glossary/yoga_terms.yaml</span>
+        <span class="affect-chip">data/glossary/loader.py</span>
+        <span class="affect-chip">.github/workflows/</span>
+      </div>
+      <div class="decision-row">
+        <button class="btn-decision btn-yes" onclick="decide(9,'yes')">✓ YES</button>
+        <button class="btn-decision btn-no"  onclick="decide(9,'no')">✕ NO</button>
+        <button class="btn-decision btn-adj" onclick="decide(9,'adj')">⟳ ADJUST</button>
+      </div>
+      <textarea class="adj-input" placeholder="Your adjustment note…" oninput="updateOutput()"></textarea>
+    </div>
+
+    <!-- TASK 10 -->
+    <div class="card" data-id="10" data-cat="infra" data-title="Full Pipeline End-to-End Test Suite">
+      <div class="card-top">
+        <span class="task-num">10</span>
+        <span class="task-title">Full Pipeline End-to-End Test Suite</span>
+        <span class="cat-badge cat-infra">Infrastructure</span>
+      </div>
+      <p class="task-desc">
+        The pipeline has unit tests but no integration test suite that runs the full
+        <code>capture → STT → translate → TTS → caption</code> chain with synthetic audio input and
+        asserts on timing, caption content, and translation quality.
+        Build <code>tests/test_pipeline_e2e.py</code> using <code>MockSTTEngine</code> +
+        pre-recorded WAV injection (bypassing sounddevice), assert latency SLAs,
+        and run on every PR. Also plug the existing test artifacts in
+        <code>data/test-runs/</code> into a <strong>quality regression test</strong>
+        that checks resemblyzer scores don't drop below baseline.
+      </p>
+      <div class="meta-row">
+        <span class="meta-label">Impact</span>
+        <div class="stars">⭐⭐⭐⭐</div>
+        <span class="meta-pill">Effort: 2 days</span>
+        <span class="meta-pill">GH new issue</span>
+      </div>
+      <div class="affects">
+        <span class="affect-chip">tests/test_pipeline_e2e.py</span>
+        <span class="affect-chip">app/live_yoga_pipeline.py</span>
+        <span class="affect-chip">.github/workflows/</span>
+      </div>
+      <div class="decision-row">
+        <button class="btn-decision btn-yes" onclick="decide(10,'yes')">✓ YES</button>
+        <button class="btn-decision btn-no"  onclick="decide(10,'no')">✕ NO</button>
+        <button class="btn-decision btn-adj" onclick="decide(10,'adj')">⟳ ADJUST</button>
+      </div>
+      <textarea class="adj-input" placeholder="Your adjustment note…" oninput="updateOutput()"></textarea>
+    </div>
+
+  </div><!-- /grid -->
+
+  <!-- ── Summary panel ── -->
+  <div class="summary-wrap">
+    <div class="summary-panel">
+      <div class="summary-header">
+        <span class="summary-title">Your Selection Summary</span>
+        <div class="tally">
+          <span class="tally-pill tally-yes" id="tally-yes">✓ 0 YES</span>
+          <span class="tally-pill tally-adj" id="tally-adj">⟳ 0 ADJUST</span>
+          <span class="tally-pill tally-no"  id="tally-no">✕ 0 NO</span>
+        </div>
+      </div>
+      <div class="output-box" id="output-box">Vote on the tasks above — your message to Claude will appear here.</div>
+      <div class="copy-row">
+        <button class="btn-copy"  onclick="copyOutput()">Copy to clipboard</button>
+        <button class="btn-begin" onclick="copyOutput()">Copy &amp; Send to Claude →</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<script>
+  const PW = 'kaanchan';
+  if (sessionStorage.getItem('vc_auth') === '1') show();
+
+  function unlock() {
+    if (document.getElementById('pw').value === PW) {
+      sessionStorage.setItem('vc_auth', '1'); show();
+    } else {
+      document.getElementById('gate-err').textContent = 'Try again.';
+      document.getElementById('pw').value = '';
+      document.getElementById('pw').focus();
+    }
+  }
+  function show() {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+  }
+
+  const state = {}; // id -> 'yes' | 'no' | 'adj'
+
+  function decide(id, choice) {
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    // Toggle off if same
+    if (state[id] === choice) {
+      state[id] = null;
+      card.classList.remove('yes','no','adj');
+    } else {
+      state[id] = choice;
+      card.classList.remove('yes','no','adj');
+      card.classList.add(choice);
+    }
+    updateOutput();
+  }
+
+  function updateOutput() {
+    const cards = document.querySelectorAll('.card[data-id]');
+    let yes = [], adj = [], no = [], undecided = [];
+
+    cards.forEach(card => {
+      const id = card.dataset.id;
+      const title = card.dataset.title;
+      const adjText = card.querySelector('.adj-input').value.trim();
+      const v = state[id];
+      if (v === 'yes')      yes.push({ id, title });
+      else if (v === 'adj') adj.push({ id, title, note: adjText });
+      else if (v === 'no')  no.push({ id, title });
+      else                  undecided.push({ id, title });
+    });
+
+    // Tally
+    document.getElementById('tally-yes').textContent = `✓ ${yes.length} YES`;
+    document.getElementById('tally-adj').textContent = `⟳ ${adj.length} ADJUST`;
+    document.getElementById('tally-no').textContent  = `✕ ${no.length} NO`;
+
+    // Build message
+    let out = '';
+    if (yes.length) {
+      out += 'BEGIN THESE:\n';
+      yes.forEach(t => out += `  • #${t.id}: ${t.title}\n`);
+      out += '\n';
+    }
+    if (adj.length) {
+      out += 'BEGIN WITH ADJUSTMENTS:\n';
+      adj.forEach(t => {
+        out += `  • #${t.id}: ${t.title}\n`;
+        if (t.note) out += `    Adjustment: ${t.note}\n`;
+      });
+      out += '\n';
+    }
+    if (no.length) {
+      out += 'SKIP:\n';
+      no.forEach(t => out += `  • #${t.id}: ${t.title}\n`);
+      out += '\n';
+    }
+    if (undecided.length && (yes.length + adj.length + no.length) > 0) {
+      out += 'UNDECIDED (hold for now):\n';
+      undecided.forEach(t => out += `  • #${t.id}: ${t.title}\n`);
+    }
+
+    document.getElementById('output-box').textContent =
+      out.trim() || 'Vote on the tasks above — your message to Claude will appear here.';
+  }
+
+  function copyOutput() {
+    const text = document.getElementById('output-box').textContent;
+    if (text === 'Vote on the tasks above — your message to Claude will appear here.') return;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target;
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => btn.textContent = orig, 1800);
+    });
+  }
+</script>
+</body>
+</html>
