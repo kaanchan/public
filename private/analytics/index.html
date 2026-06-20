@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session Analytics — Private</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"
+        integrity="sha384-36b281faee93b3a02d9088703e2c62293ce048a35b9728659344a886581aafd507501cda8bfb209cd35659ddbdd71aad"
+        crossorigin="anonymous"></script>
+<style>
+  :root {
+    --bg: #0f172a; --card: #1e293b; --border: #334155;
+    --text: #f1f5f9; --muted: #94a3b8; --accent: #38bdf8;
+    --green: #34d399; --gold: #fbbf24; --red: #f87171;
+    --purple: #a78bfa; --orange: #fb923c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; min-height: 100vh; }
+
+  /* ── Gate ── */
+  #gate {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 2rem; gap: 1.2rem;
+  }
+  #gate h1 { font-size: 1.1rem; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+  #gate input {
+    padding: .75rem 1.2rem; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 1.1rem;
+    text-align: center; width: 100%; max-width: 260px; letter-spacing: .1em;
+  }
+  #gate input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  #gate button {
+    padding: .7rem 2rem; border-radius: 8px; border: none;
+    background: var(--accent); color: #0f172a; font-weight: 700; font-size: 1rem;
+    cursor: pointer; width: 100%; max-width: 260px;
+  }
+  #gate button:active { opacity: .85; }
+  #gate-err { color: var(--red); font-size: .85rem; min-height: 1.2em; }
+
+  /* ── Content ── */
+  #content { display: none; padding: 2rem 1.5rem 5rem; max-width: 1100px; margin: auto; }
+
+  .page-title { font-size: 1.5rem; font-weight: 700; margin-bottom: .25rem; }
+  .page-sub { color: var(--muted); font-size: .85rem; margin-bottom: 2rem; line-height: 1.6; }
+
+  /* ── Sample data banner ── */
+  #sample-banner {
+    display: none;
+    background: #3b2a00; border: 1px solid var(--gold); border-radius: 8px;
+    padding: .75rem 1rem; margin-bottom: 1.5rem;
+    color: var(--gold); font-size: .82rem; line-height: 1.6;
+  }
+
+  /* ── Stat cards ── */
+  .stat-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+  .stat-card {
+    flex: 1; min-width: 140px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.1rem 1.3rem;
+  }
+  .stat-label { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; margin-bottom: .35rem; }
+  .stat-value { font-size: 1.7rem; font-weight: 700; }
+  .stat-sub { color: var(--muted); font-size: .75rem; margin-top: .2rem; }
+
+  /* ── Section headings ── */
+  .section { margin-bottom: 2.5rem; }
+  .section-title {
+    font-size: .95rem; font-weight: 600; color: var(--accent);
+    margin-bottom: 1rem; padding-bottom: .4rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Charts ── */
+  .chart-wrap {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.2rem 1.4rem; position: relative;
+  }
+  .chart-wrap canvas { display: block; }
+
+  /* ── Two-col layout ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── Session table ── */
+  .table-wrap {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    overflow-x: auto;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  thead th {
+    padding: .75rem 1rem; text-align: left; font-weight: 600;
+    color: var(--muted); border-bottom: 1px solid var(--border);
+    background: #1a2744; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em;
+    white-space: nowrap;
+  }
+  tbody td { padding: .65rem 1rem; border-bottom: 1px solid #1e293b; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: #243050; }
+  .lat-ok { color: var(--green); }
+  .lat-warn { color: var(--gold); }
+  .lat-bad { color: var(--red); }
+
+  /* ── Session comparison ── */
+  .cmp-controls { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+  .cmp-controls label { color: var(--muted); font-size: .8rem; }
+  .cmp-controls select {
+    background: var(--card); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: .4rem .7rem; font-size: .85rem;
+  }
+  .cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  @media (max-width: 600px) { .cmp-grid { grid-template-columns: 1fr; } }
+  .cmp-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.1rem 1.3rem;
+  }
+  .cmp-card h4 { font-size: .88rem; font-weight: 600; margin-bottom: .8rem; color: var(--accent); }
+  .cmp-row { display: flex; justify-content: space-between; align-items: center; padding: .35rem 0; border-bottom: 1px solid #1e293b; font-size: .82rem; }
+  .cmp-row:last-child { border-bottom: none; }
+  .cmp-key { color: var(--muted); }
+  .cmp-val { font-weight: 600; }
+
+  /* ── Heatmap ── */
+  .heatmap-wrap {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.2rem 1.4rem; overflow-x: auto;
+  }
+  .heatmap-table { border-collapse: collapse; font-size: .78rem; width: 100%; }
+  .heatmap-table th {
+    padding: .4rem .6rem; color: var(--muted); font-weight: 500; text-align: center;
+    white-space: nowrap;
+  }
+  .heatmap-table th.row-label { text-align: left; color: var(--text); font-weight: 600; }
+  .heatmap-table td {
+    padding: .35rem .5rem; text-align: center; border-radius: 4px; font-weight: 600;
+    font-size: .75rem; white-space: nowrap; min-width: 64px;
+  }
+  .legend-row { display: flex; gap: .5rem; align-items: center; margin-top: .75rem; font-size: .73rem; color: var(--muted); }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+
+  /* ── Note box ── */
+  .note {
+    margin-top: 3rem; background: #0f172a; border: 1px solid var(--border);
+    border-radius: 8px; padding: .9rem 1.1rem;
+    font-size: .76rem; color: var(--muted); line-height: 1.7;
+  }
+  .note strong { color: var(--text); }
+  .note code { background: #1e293b; padding: .1rem .35rem; border-radius: 4px; color: var(--accent); font-size: .82em; }
+
+  /* ── Empty state ── */
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+  .empty-state .big { font-size: 3rem; margin-bottom: .5rem; }
+  .empty-state p { line-height: 1.8; }
+
+  /* ── Coverage bar ── */
+  .cov-bar-wrap { flex: 1; background: #1e293b; border-radius: 999px; height: 6px; overflow: hidden; }
+  .cov-bar { height: 100%; border-radius: 999px; background: var(--green); }
+</style>
+</head>
+<body>
+
+<!-- ── Password gate ── -->
+<div id="gate">
+  <h1>Private — Session Analytics</h1>
+  <input type="password" id="pw" placeholder="passphrase" autocomplete="off"
+         onkeydown="if(event.key==='Enter') unlock()">
+  <button onclick="unlock()">View Dashboard</button>
+  <span id="gate-err"></span>
+</div>
+
+<!-- ── Dashboard ── -->
+<div id="content">
+
+  <h1 class="page-title">Session Analytics Dashboard</h1>
+  <p class="page-sub">
+    Real-time translation pipeline · yoga instruction · STT → translate → TTS
+  </p>
+
+  <div id="sample-banner">
+    Showing <strong>sample data</strong> — no real sessions found (or analytics.json not loaded).
+    Run <code>uv run python scripts/export_analytics.py</code> then copy
+    <code>data/test-runs/analytics_YYYYMMDD/analytics.json</code> here to update.
+  </div>
+
+  <!-- Stat cards -->
+  <div class="stat-row" id="stat-cards">
+    <div class="stat-card">
+      <div class="stat-label">Sessions</div>
+      <div class="stat-value" id="sc-sessions">—</div>
+      <div class="stat-sub">total recorded</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Utterances</div>
+      <div class="stat-value" id="sc-utterances">—</div>
+      <div class="stat-sub">translated phrases</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Duration</div>
+      <div class="stat-value" id="sc-duration">—</div>
+      <div class="stat-sub">across all sessions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg Total Latency</div>
+      <div class="stat-value" id="sc-latency">—</div>
+      <div class="stat-sub">end-to-end avg ms</div>
+    </div>
+  </div>
+
+  <!-- Latency heatmap -->
+  <div class="section">
+    <div class="section-title">Latency Heatmap — per stage across sessions</div>
+    <div class="heatmap-wrap" id="heatmap-container">
+      <div class="empty-state"><p>No data</p></div>
+    </div>
+  </div>
+
+  <!-- Session overview table -->
+  <div class="section">
+    <div class="section-title">Session Overview</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Duration</th>
+            <th>Utterances</th>
+            <th>STT avg (ms)</th>
+            <th>Translate avg (ms)</th>
+            <th>TTS avg (ms)</th>
+            <th>Total avg (ms)</th>
+            <th>Top Terms</th>
+          </tr>
+        </thead>
+        <tbody id="session-table-body">
+          <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Charts row: term frequency + glossary coverage -->
+  <div class="two-col section">
+    <div>
+      <div class="section-title">Sanskrit Term Frequency</div>
+      <div class="chart-wrap" style="height:320px">
+        <canvas id="chart-terms"></canvas>
+      </div>
+    </div>
+    <div>
+      <div class="section-title">Glossary Coverage per Session</div>
+      <div class="chart-wrap" style="height:320px">
+        <canvas id="chart-coverage"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Latency trend chart -->
+  <div class="section">
+    <div class="section-title">Average Latency Trend — per session</div>
+    <div class="chart-wrap" style="height:280px">
+      <canvas id="chart-latency-trend"></canvas>
+    </div>
+  </div>
+
+  <!-- Session comparison -->
+  <div class="section">
+    <div class="section-title">Session Comparison</div>
+    <div class="cmp-controls">
+      <div>
+        <label for="cmp-a">Session A</label><br>
+        <select id="cmp-a" onchange="renderComparison()"></select>
+      </div>
+      <div>
+        <label for="cmp-b">Session B</label><br>
+        <select id="cmp-b" onchange="renderComparison()"></select>
+      </div>
+    </div>
+    <div class="cmp-grid" id="cmp-grid">
+      <!-- filled by renderComparison() -->
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>How to update:</strong> run <code>uv run python scripts/export_analytics.py</code>
+    in the <strong>real-time-translation</strong> repo, then copy
+    <code>data/test-runs/analytics_YYYYMMDD/analytics.json</code> into this directory
+    alongside <code>index.html</code> and reload the page.<br><br>
+    <strong>Latency colour bands:</strong>
+    <span style="color:var(--green)">green &lt;1500 ms total</span> ·
+    <span style="color:var(--gold)">gold 1500–3000 ms</span> ·
+    <span style="color:var(--red)">red &gt;3000 ms</span>
+    <br><br>
+    <strong>Generated by:</strong> <code>app/session_audit.py export-dashboard</code> + <code>scripts/export_analytics.py</code>
+  </div>
+
+</div><!-- #content -->
+
+<script>
+/* ─── Auth ─────────────────────────────────────────────────────────────────── */
+const PW = 'kaanchan';
+if (sessionStorage.getItem('an_auth') === '1') show();
+
+function unlock() {
+  if (document.getElementById('pw').value === PW) {
+    sessionStorage.setItem('an_auth', '1');
+    show();
+  } else {
+    document.getElementById('gate-err').textContent = 'Try again.';
+    document.getElementById('pw').value = '';
+    document.getElementById('pw').focus();
+  }
+}
+
+function show() {
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+  loadDashboard();
+}
+
+/* ─── Data loading ──────────────────────────────────────────────────────────── */
+let DATA = null;
+
+async function loadDashboard() {
+  try {
+    const resp = await fetch('analytics.json');
+    if (!resp.ok) throw new Error('not found');
+    DATA = await resp.json();
+  } catch {
+    // No analytics.json yet — show empty state with explanation
+    DATA = null;
+    showEmptyState();
+    return;
+  }
+
+  if (DATA.is_sample_data) {
+    document.getElementById('sample-banner').style.display = 'block';
+  }
+
+  renderStatCards();
+  renderHeatmap();
+  renderSessionTable();
+  renderTermChart();
+  renderCoverageChart();
+  renderLatencyTrend();
+  populateComparison();
+  renderComparison();
+}
+
+function showEmptyState() {
+  document.getElementById('sample-banner').style.display = 'block';
+  document.getElementById('sample-banner').innerHTML =
+    '<strong>No analytics.json found.</strong> ' +
+    'Run <code>uv run python scripts/export_analytics.py</code> in the real-time-translation repo, ' +
+    'then copy <code>data/test-runs/analytics_YYYYMMDD/analytics.json</code> here.';
+
+  document.getElementById('sc-sessions').textContent = '0';
+  document.getElementById('sc-utterances').textContent = '0';
+  document.getElementById('sc-duration').textContent = '0 min';
+  document.getElementById('sc-latency').textContent = '—';
+  document.getElementById('session-table-body').innerHTML =
+    '<tr><td colspan="8" class="empty-state"><p>No session data — run export_analytics.py first.</p></td></tr>';
+  document.getElementById('heatmap-container').innerHTML =
+    '<div class="empty-state"><div class="big">📊</div><p>No data yet.<br>Run <code>export_analytics.py</code> and copy <code>analytics.json</code> here.</p></div>';
+}
+
+/* ─── Stat cards ────────────────────────────────────────────────────────────── */
+function renderStatCards() {
+  const t = DATA.totals;
+  document.getElementById('sc-sessions').textContent = t.session_count ?? 0;
+  document.getElementById('sc-utterances').textContent = (t.total_utterances ?? 0).toLocaleString();
+
+  const mins = Math.round((t.total_duration_s ?? 0) / 60);
+  document.getElementById('sc-duration').textContent = mins >= 60
+    ? `${Math.floor(mins/60)}h ${mins%60}m`
+    : `${mins} min`;
+
+  const lat = t.avg_latency_ms?.total;
+  document.getElementById('sc-latency').textContent = lat ? `${Math.round(lat)} ms` : '—';
+}
+
+/* ─── Latency heatmap ───────────────────────────────────────────────────────── */
+function latColor(ms, stage) {
+  // Per-stage colour thresholds
+  const thresholds = {
+    stt:       [500,  1500],
+    translate: [800,  2000],
+    tts:       [600,  1500],
+    total:     [1500, 3000],
+  };
+  const [lo, hi] = thresholds[stage] || [1000, 3000];
+  if (ms <= lo)  return { bg: '#14532d', fg: '#34d399' }; // green
+  if (ms <= hi)  return { bg: '#3b2a00', fg: '#fbbf24' }; // gold
+  return { bg: '#450a0a', fg: '#f87171' };                  // red
+}
+
+function renderHeatmap() {
+  const sessions = DATA.sessions;
+  if (!sessions || sessions.length === 0) return;
+
+  const stages = ['stt', 'translate', 'tts', 'total'];
+  const stageLabel = { stt: 'STT', translate: 'Translate', tts: 'TTS', total: 'Total' };
+
+  let html = '<table class="heatmap-table"><thead><tr>';
+  html += '<th class="row-label">Stage</th>';
+  sessions.forEach(s => {
+    const label = s.date || s.file?.replace('session_','').slice(0,10) || '?';
+    html += `<th title="${s.file||''}">${label}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  stages.forEach(stage => {
+    html += `<tr><td class="heatmap-table" style="padding:.35rem .6rem;font-weight:600;color:var(--text);white-space:nowrap">${stageLabel[stage]}</td>`;
+    sessions.forEach(s => {
+      const ms = s.avg_latency_ms?.[stage] ?? 0;
+      const { bg, fg } = latColor(ms, stage);
+      html += `<td style="background:${bg};color:${fg}">${Math.round(ms)}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  html += '<div class="legend-row">';
+  html += '<span class="legend-swatch" style="background:#14532d"></span><span>Fast</span>&nbsp;&nbsp;';
+  html += '<span class="legend-swatch" style="background:#3b2a00"></span><span>Moderate</span>&nbsp;&nbsp;';
+  html += '<span class="legend-swatch" style="background:#450a0a"></span><span>Slow</span>&nbsp;&nbsp;';
+  html += '<span style="margin-left:auto;font-size:.7rem">Values in ms (average per session)</span>';
+  html += '</div>';
+
+  document.getElementById('heatmap-container').innerHTML = html;
+}
+
+/* ─── Session table ─────────────────────────────────────────────────────────── */
+function latClass(ms, stage) {
+  const thresholds = { stt:[500,1500], translate:[800,2000], tts:[600,1500], total:[1500,3000] };
+  const [lo, hi] = thresholds[stage] || [1000,3000];
+  if (ms <= lo) return 'lat-ok';
+  if (ms <= hi) return 'lat-warn';
+  return 'lat-bad';
+}
+
+function renderSessionTable() {
+  const sessions = DATA.sessions;
+  if (!sessions || sessions.length === 0) {
+    document.getElementById('session-table-body').innerHTML =
+      '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">No sessions</td></tr>';
+    return;
+  }
+
+  let html = '';
+  sessions.forEach(s => {
+    const dur = s.duration_s > 0
+      ? (s.duration_s >= 60 ? `${Math.floor(s.duration_s/60)}m ${Math.round(s.duration_s%60)}s` : `${Math.round(s.duration_s)}s`)
+      : '—';
+    const lat = s.avg_latency_ms || {};
+    const sttMs = Math.round(lat.stt ?? 0);
+    const trMs  = Math.round(lat.translate ?? 0);
+    const ttsMs = Math.round(lat.tts ?? 0);
+    const totMs = Math.round(lat.total ?? 0);
+
+    const topTerms = (s.sanskrit_terms || []).slice(0, 3).join(', ') || '—';
+
+    html += `<tr>
+      <td style="white-space:nowrap">${s.date || '—'}</td>
+      <td>${dur}</td>
+      <td>${s.utterances ?? 0}</td>
+      <td class="${latClass(sttMs,'stt')}">${sttMs}</td>
+      <td class="${latClass(trMs,'translate')}">${trMs}</td>
+      <td class="${latClass(ttsMs,'tts')}">${ttsMs}</td>
+      <td class="${latClass(totMs,'total')}">${totMs}</td>
+      <td style="color:var(--muted);font-size:.78rem">${topTerms}</td>
+    </tr>`;
+  });
+  document.getElementById('session-table-body').innerHTML = html;
+}
+
+/* ─── Term frequency chart ──────────────────────────────────────────────────── */
+function renderTermChart() {
+  const top = DATA.totals?.top_terms || [];
+  if (top.length === 0) return;
+
+  const labels = top.map(t => t.term);
+  const values = top.map(t => t.count);
+
+  const ctx = document.getElementById('chart-terms').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Occurrences',
+        data: values,
+        backgroundColor: '#1d4ed8',
+        borderColor: '#38bdf8',
+        borderWidth: 1,
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} times` } },
+      },
+      scales: {
+        x: {
+          grid: { color: '#1e293b' },
+          ticks: { color: '#94a3b8' },
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#f1f5f9', font: { size: 11 } },
+        },
+      },
+    },
+  });
+}
+
+/* ─── Glossary coverage chart ───────────────────────────────────────────────── */
+function renderCoverageChart() {
+  const sessions = DATA.sessions || [];
+  const labels = sessions.map(s => s.date || s.file?.slice(0,10) || '?');
+  const values = sessions.map(s => s.glossary_coverage?.coverage_pct ?? 0);
+
+  if (values.every(v => v === 0)) return;
+
+  const ctx = document.getElementById('chart-coverage').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Coverage %',
+        data: values,
+        backgroundColor: values.map(v => v >= 50 ? '#14532d' : '#3b2a00'),
+        borderColor: values.map(v => v >= 50 ? '#34d399' : '#fbbf24'),
+        borderWidth: 1,
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw.toFixed(1)}% of glossary terms detected` } },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45 },
+        },
+        y: {
+          min: 0, max: 100,
+          grid: { color: '#1e293b' },
+          ticks: { color: '#94a3b8', callback: v => v + '%' },
+        },
+      },
+    },
+  });
+}
+
+/* ─── Latency trend ─────────────────────────────────────────────────────────── */
+function renderLatencyTrend() {
+  const sessions = DATA.sessions || [];
+  const labels = sessions.map(s => s.date || s.file?.slice(0,10) || '?');
+
+  const sttData   = sessions.map(s => Math.round(s.avg_latency_ms?.stt ?? 0));
+  const trData    = sessions.map(s => Math.round(s.avg_latency_ms?.translate ?? 0));
+  const ttsData   = sessions.map(s => Math.round(s.avg_latency_ms?.tts ?? 0));
+  const totalData = sessions.map(s => Math.round(s.avg_latency_ms?.total ?? 0));
+
+  const ctx = document.getElementById('chart-latency-trend').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Total', data: totalData, borderColor: '#38bdf8',
+          backgroundColor: 'rgba(56,189,248,.08)', fill: true,
+          tension: .35, pointRadius: 3,
+        },
+        {
+          label: 'Translate', data: trData, borderColor: '#a78bfa',
+          fill: false, tension: .35, pointRadius: 3,
+        },
+        {
+          label: 'TTS', data: ttsData, borderColor: '#fbbf24',
+          fill: false, tension: .35, pointRadius: 3,
+        },
+        {
+          label: 'STT', data: sttData, borderColor: '#34d399',
+          fill: false, tension: .35, pointRadius: 3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#94a3b8', font: { size: 11 } },
+        },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw} ms` } },
+      },
+      scales: {
+        x: {
+          grid: { color: '#1e293b' },
+          ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45 },
+        },
+        y: {
+          grid: { color: '#1e293b' },
+          ticks: { color: '#94a3b8', callback: v => v + ' ms' },
+        },
+      },
+    },
+  });
+}
+
+/* ─── Session comparison ────────────────────────────────────────────────────── */
+function populateComparison() {
+  const sessions = DATA.sessions || [];
+  const selA = document.getElementById('cmp-a');
+  const selB = document.getElementById('cmp-b');
+  selA.innerHTML = '';
+  selB.innerHTML = '';
+  sessions.forEach((s, i) => {
+    const label = `${s.date || '?'} (${s.utterances} utts)`;
+    selA.add(new Option(label, i));
+    selB.add(new Option(label, i));
+  });
+  // Default: compare first and last
+  if (sessions.length >= 2) {
+    selB.value = sessions.length - 1;
+  }
+}
+
+function renderComparison() {
+  const sessions = DATA?.sessions || [];
+  const ai = parseInt(document.getElementById('cmp-a').value, 10);
+  const bi = parseInt(document.getElementById('cmp-b').value, 10);
+  if (isNaN(ai) || isNaN(bi) || !sessions[ai] || !sessions[bi]) {
+    document.getElementById('cmp-grid').innerHTML = '<p style="color:var(--muted)">Select two sessions above.</p>';
+    return;
+  }
+  document.getElementById('cmp-grid').innerHTML = cmpCard(sessions[ai], 'A') + cmpCard(sessions[bi], 'B');
+}
+
+function cmpCard(s, label) {
+  const dur = s.duration_s > 0
+    ? (s.duration_s >= 60 ? `${Math.floor(s.duration_s/60)}m ${Math.round(s.duration_s%60)}s` : `${Math.round(s.duration_s)}s`)
+    : '—';
+  const lat = s.avg_latency_ms || {};
+  const cov = s.glossary_coverage;
+  const covPct = cov?.coverage_pct ?? 0;
+  const terms = (s.sanskrit_terms || []).join(', ') || '—';
+
+  return `<div class="cmp-card">
+    <h4>Session ${label} — ${s.date || '?'}</h4>
+    <div class="cmp-row"><span class="cmp-key">File</span><span class="cmp-val" style="font-size:.73rem;color:var(--muted)">${s.file||'—'}</span></div>
+    <div class="cmp-row"><span class="cmp-key">Duration</span><span class="cmp-val">${dur}</span></div>
+    <div class="cmp-row"><span class="cmp-key">Utterances</span><span class="cmp-val">${s.utterances ?? 0}</span></div>
+    <div class="cmp-row"><span class="cmp-key">STT avg</span><span class="cmp-val ${latClass(Math.round(lat.stt??0),'stt')}">${Math.round(lat.stt??0)} ms</span></div>
+    <div class="cmp-row"><span class="cmp-key">Translate avg</span><span class="cmp-val ${latClass(Math.round(lat.translate??0),'translate')}">${Math.round(lat.translate??0)} ms</span></div>
+    <div class="cmp-row"><span class="cmp-key">TTS avg</span><span class="cmp-val ${latClass(Math.round(lat.tts??0),'tts')}">${Math.round(lat.tts??0)} ms</span></div>
+    <div class="cmp-row"><span class="cmp-key">Total avg</span><span class="cmp-val ${latClass(Math.round(lat.total??0),'total')}">${Math.round(lat.total??0)} ms</span></div>
+    <div class="cmp-row" style="flex-direction:column;align-items:flex-start;gap:.3rem">
+      <span class="cmp-key">Glossary coverage</span>
+      <div style="display:flex;align-items:center;gap:.5rem;width:100%">
+        <div class="cov-bar-wrap"><div class="cov-bar" style="width:${covPct}%"></div></div>
+        <span class="cmp-val">${covPct.toFixed(1)}%</span>
+      </div>
+    </div>
+    <div class="cmp-row" style="flex-direction:column;align-items:flex-start;gap:.3rem">
+      <span class="cmp-key">Detected terms</span>
+      <span style="color:var(--muted);font-size:.73rem;line-height:1.5">${terms}</span>
+    </div>
+  </div>`;
+}
+</script>
+
+</body>
+</html>
