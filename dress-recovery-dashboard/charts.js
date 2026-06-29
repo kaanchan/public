@@ -20,7 +20,7 @@ function renderUOEventsChart(canvasId){
   for(let n=0;n<maxEvt;n++){
     const alpha=Math.round((0.45+(n/maxEvt)*0.50)*255).toString(16).padStart(2,'0');
     datasets.push({
-      label:`Event ${n+1}`,
+      label:`${t('legend_event')}${n+1}`,
       data:byDay.map(day=>day[n]??null),
       backgroundColor:kidneyHex+alpha,
       borderColor:'transparent',borderWidth:0,stack:'uo',
@@ -199,8 +199,8 @@ function mkChart(id,mKey){
   const lineSoft=cvar('--line-soft');
 
   const events=[];
-  if(m.dial)DIAL_IDX.forEach(i=>events.push({idx:i,label:'D',color:cvar('--kidney')}));
-  if(m.tx||isTxDriven(mKey))TX_IDX.forEach(i=>events.push({idx:i,label:'T',color:cvar('--blood')}));
+  if(m.dial)DIAL_IDX.forEach(i=>events.push({idx:i,label:t('evt_dial_short'),color:cvar('--kidney')}));
+  if(m.tx||isTxDriven(mKey))TX_IDX.forEach(i=>events.push({idx:i,label:t('evt_tx_short'),color:cvar('--blood')}));
 
   // Gap bridge — faint dashed line spanning post-discharge null gaps (separate dataset
   // because Chart.js 4.4.1 silently ignores borderDash inside segment callbacks)
@@ -230,7 +230,7 @@ function mkChart(id,mKey){
     const upD=[...new Array(m.v.length).fill(null),...upper];
     const loD=[...new Array(m.v.length).fill(null),...lower];
     datasets.push({
-      label:'Upper bound',data:upD,borderColor:'transparent',backgroundColor:sysSoftHexC+'33',
+      label:t('legend_upper_bound'),data:upD,borderColor:'transparent',backgroundColor:sysSoftHexC+'33',
       pointRadius:0,fill:'+1',tension:.3,spanGaps:true,order:5,
     });
     datasets.push({
@@ -255,7 +255,7 @@ function mkChart(id,mKey){
         backgroundColor:cvar('--ink'),titleColor:cvar('--card'),bodyColor:cvar('--card'),
         titleFont:{family:'Inter Tight',size:11,weight:'600'},bodyFont:{family:'Inter Tight',size:11},padding:8,
         filter:item=>item.dataset.label!==t('legend_upper_bound')&&item.dataset.label!==t('legend_lower_bound')&&item.dataset.label!=='',
-        callbacks:{label(ctx){if(ctx.raw==null)return null;const p=ctx.dataset.label===t('legend_projected')?'(forecast) ':'';return`${p}${ctx.raw} ${m.unit}`;}}},
+        callbacks:{label(ctx){if(ctx.raw==null)return null;const p=ctx.dataset.label===t('legend_projected')?t('legend_forecast_pre'):'';return`${p}${ctx.raw} ${m.unit}`;}}},
       zoneBand:{nL:m.nL,nH:m.nH},
       evtMarkers:{events},
     },
@@ -351,7 +351,7 @@ function renderCompositeAnnotated(){
           borderWidth:si===0?2.5:1.8,pointRadius:0,tension:.35,spanGaps:true,order:si});
       });
     } else {
-      datasets.push({label:tSys(k,'name')+' (raw)',data:COMP_RAW[k],
+      datasets.push({label:tSys(k,'name')+t('legend_raw_suffix'),data:COMP_RAW[k],
         borderColor:hex+'55',backgroundColor:'transparent',
         borderWidth:1,borderDash:[2,2],pointRadius:0,tension:.3,spanGaps:true,order:10});
       datasets.push({label:tSys(k,'name'),data:COMP_AVG[k],
@@ -379,7 +379,7 @@ function renderCompositeAnnotated(){
     scales:{
       x:{ticks:{color:t3,font:{size:9,family:'JetBrains Mono'},maxRotation:40,autoSkip:true,maxTicksLimit:10},grid:{color:lineSoft+'60'},border:{display:false}},
       y:{min:0,max:110,
-        ticks:{color:t3,font:{size:9,family:'JetBrains Mono'},maxTicksLimit:6,callback:v=>v===100?['Normal','100']:v===0?'Critical':v>100?null:v},
+        ticks:{color:t3,font:{size:9,family:'JetBrains Mono'},maxTicksLimit:6,callback:v=>v===100?[t('axis_normal'),'100']:v===0?t('axis_critical'):v>100?null:v},
         grid:{color:lineSoft+'60'},border:{display:false}},
     },
   },plugins:[{

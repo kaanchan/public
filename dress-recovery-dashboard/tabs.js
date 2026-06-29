@@ -18,9 +18,9 @@ function renderOverview(){
     ).join('');
     return `<div class="cc-leg"><span class="dot" style="background:${sysHex(k)}"></span>${tSys(k,'name')}</div>`;
   }).join('')+`
-    <div class="cc-leg"><span class="ev" style="background:var(--kidney)">D</span>Dialysis</div>
-    <div class="cc-leg"><span class="ev" style="background:var(--blood)">T</span>Transfusion</div>
-    <div class="cc-leg"><span class="ev" style="background:var(--z-normal)">★</span>Milestone</div>`;
+    <div class="cc-leg"><span class="ev" style="background:var(--kidney)">${t('evt_dial_short')}</span>${t('leg_dialysis')}</div>
+    <div class="cc-leg"><span class="ev" style="background:var(--blood)">${t('evt_tx_short')}</span>${t('leg_transfusion')}</div>
+    <div class="cc-leg"><span class="ev" style="background:var(--z-normal)">★</span>${t('leg_milestone')}</div>`;
 
   document.getElementById('ov-inner').innerHTML=`
     <div class="notice">${t('disclaimer')}</div>
@@ -34,23 +34,23 @@ function renderOverview(){
       <p><strong>${t('story_prog_l')}</strong>${t('story_prog')}</p>
       <p><strong>${t('story_asof_l')}</strong>${t('story_asof')}</p>
       <div class="meta-row">
-        <div class="meta-pill"><div class="lbl">Days tracked</div><div class="val"><em>27</em></div></div>
-        <div class="meta-pill"><div class="lbl">Dialysis sessions</div><div class="val"><em>11</em></div></div>
-        <div class="meta-pill"><div class="lbl">Transfusions</div><div class="val"><em>4</em></div></div>
-        <div class="meta-pill"><div class="lbl">Liver injury</div><div class="val">Resolved <em>🎉</em></div></div>
-        <div class="meta-pill"><div class="lbl">UO Apr 25–May 12</div><div class="val"><em>445→2,940 mL</em></div></div>
-        <div class="meta-pill"><div class="lbl">Outlook</div><div class="val">Encouraging</div></div>
+        <div class="meta-pill"><div class="lbl">${t('mp_days_l')}</div><div class="val"><em>27</em></div></div>
+        <div class="meta-pill"><div class="lbl">${t('mp_dial_l')}</div><div class="val"><em>11</em></div></div>
+        <div class="meta-pill"><div class="lbl">${t('mp_tx_l')}</div><div class="val"><em>4</em></div></div>
+        <div class="meta-pill"><div class="lbl">${t('mp_liver_l')}</div><div class="val">${t('mp_liver_v')} <em>🎉</em></div></div>
+        <div class="meta-pill"><div class="lbl">${t('mp_uo_l')}</div><div class="val"><em>445→2,940 mL</em></div></div>
+        <div class="meta-pill"><div class="lbl">${t('mp_outlook_l')}</div><div class="val">${t('mp_outlook_v')}</div></div>
       </div>
     </div>
 
-    <div class="sec"><h3>${t('sec_systems')} <em style="font-style:italic;color:var(--t2)">· since last reading</em></h3><div class="sec-line"></div><span class="sec-sub">click to explore</span></div>
+    <div class="sec"><h3>${t('sec_systems')} <em style="font-style:italic;color:var(--t2)">${t('ov_since')}</em></h3><div class="sec-line"></div><span class="sec-sub">${t('ov_explore')}</span></div>
     <div class="sys-grid">${sysCards}</div>
 
     <div class="composite-card">
       <div class="cc-head">
         <div>
-          <div class="cc-title">All systems · annotated recovery timeline</div>
-          <div class="cc-sub">0 = critical · 100 = fully healthy · key events marked above</div>
+          <div class="cc-title">${t('cc_title2')}</div>
+          <div class="cc-sub">${t('cc_sub2')}</div>
         </div>
       </div>
       <div class="cc-chart"><canvas id="cc-canvas"></canvas></div>
@@ -155,7 +155,7 @@ function renderSys(key){
       </div>
       <div class="cc-chart" style="height:280px"><canvas id="uo-events-canvas"></canvas></div>
       <div class="cc-legend">
-        <div class="cc-leg"><span class="dot" style="background:var(--kidney)"></span>${t('gp_uo_events_title')} (stacked by void)</div>
+        <div class="cc-leg"><span class="dot" style="background:var(--kidney)"></span>${t('gp_uo_events_title')} ${t('gp_uo_stacked')}</div>
         <div class="cc-leg"><span class="legend-band"></span>${t('legend_band')}</div>
       </div>
     </div>`:''}
@@ -229,87 +229,80 @@ function renderHeatmap(){
 function renderDress(){
   const el=document.getElementById('dress-inner');
   if(!el)return;
-  const lang=document.body.getAttribute('data-lang')||'en';
-  if(lang!=='en'){
-    el.innerHTML=['s1','s2','s3','s4','s5','qa'].map(k=>
-      `<div class="dress-section">${tDress(k)}</div>`
-    ).join('');
-    return;
-  }
   const noHead=html=>html.replace(/^<h2[\s\S]*?<\/h2>\s*(<p[^>]*color:var\(--t3\)[^>]*>[\s\S]*?<\/p>\s*)?/,'');
   el.innerHTML=`
     <div class="hero">
-      <div class="hero-eyebrow">DIAGNOSIS · DRESS SYNDROME</div>
-      <h2>What DRESS is, and why every system was hit at once</h2>
-      <p><strong>DRESS</strong> stands for <em>Drug Reaction with Eosinophilia and Systemic Symptoms</em> — a rare, delayed immune reaction to a medication. In KA's case, the trigger was a <strong>Sulfa antibiotic</strong>. The reaction does not appear at the moment of taking the drug; it develops over 2–8 weeks as the immune system slowly mounts a response, and then all of that response arrives together.</p>
-      <p>That timing is why so many systems showed injury simultaneously on admission. The kidneys, liver, blood-cell production, and electrolyte balance were not failing for separate reasons — they were responding to a single, shared immune storm.</p>
+      <div class="hero-eyebrow">${t('dress_eyebrow')}</div>
+      <h2>${t('dress_hero_h')}</h2>
+      <p>${t('dress_hero_p1')}</p>
+      <p>${t('dress_hero_p2')}</p>
     </div>
 
-    <div class="sec"><h3>How it presents</h3><div class="sec-line"></div><span class="sec-sub">classic features</span></div>
+    <div class="sec"><h3>${t('dress_present_h')}</h3><div class="sec-line"></div><span class="sec-sub">${t('dress_present_sub')}</span></div>
     <div class="sys-grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
       <div class="ring-card" style="--sys-color:var(--liver);padding:18px 20px">
-        <div class="ring-name" style="margin-bottom:8px">Skin rash</div>
-        <div style="font-size:12.5px;color:var(--t2);line-height:1.55">Widespread rash, often the first visible sign. May appear feverish or measles-like.</div>
+        <div class="ring-name" style="margin-bottom:8px">${t('dress_sym1_t')}</div>
+        <div style="font-size:12.5px;color:var(--t2);line-height:1.55">${t('dress_sym1_d')}</div>
       </div>
       <div class="ring-card" style="--sys-color:var(--blood);padding:18px 20px">
-        <div class="ring-name" style="margin-bottom:8px">Eosinophilia</div>
-        <div style="font-size:12.5px;color:var(--t2);line-height:1.55">A specific type of white blood cell — the eosinophil — rises sharply. This is the immune signature that gives DRESS its name.</div>
+        <div class="ring-name" style="margin-bottom:8px">${t('dress_sym2_t')}</div>
+        <div style="font-size:12.5px;color:var(--t2);line-height:1.55">${t('dress_sym2_d')}</div>
       </div>
       <div class="ring-card" style="--sys-color:var(--kidney);padding:18px 20px">
-        <div class="ring-name" style="margin-bottom:8px">Organ involvement</div>
-        <div style="font-size:12.5px;color:var(--t2);line-height:1.55">Liver and kidneys are the most commonly affected. Marrow suppression and electrolyte disruption are also typical.</div>
+        <div class="ring-name" style="margin-bottom:8px">${t('dress_sym3_t')}</div>
+        <div style="font-size:12.5px;color:var(--t2);line-height:1.55">${t('dress_sym3_d')}</div>
       </div>
       <div class="ring-card" style="--sys-color:var(--elec);padding:18px 20px">
-        <div class="ring-name" style="margin-bottom:8px">Fever</div>
-        <div style="font-size:12.5px;color:var(--t2);line-height:1.55">Often high and prolonged. Part of the systemic inflammatory response.</div>
+        <div class="ring-name" style="margin-bottom:8px">${t('dress_sym4_t')}</div>
+        <div style="font-size:12.5px;color:var(--t2);line-height:1.55">${t('dress_sym4_d')}</div>
       </div>
     </div>
 
-    <div class="sec"><h3>How it's treated</h3><div class="sec-line"></div><span class="sec-sub">two pillars</span></div>
+    <div class="sec"><h3>${t('dress_treat_h')}</h3><div class="sec-line"></div><span class="sec-sub">${t('dress_treat_sub')}</span></div>
     <div class="composite-card" style="padding:22px 24px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
         <div>
-          <div style="font-family:'Newsreader',serif;font-size:18px;color:var(--ink);margin-bottom:8px">1 · Stop the trigger</div>
-          <div style="font-size:13px;color:var(--t2);line-height:1.6">The Sulfa antibiotic was identified and discontinued immediately on admission. This is the single most important step — without it, the reaction continues to escalate.</div>
+          <div style="font-family:'Newsreader',serif;font-size:18px;color:var(--ink);margin-bottom:8px">${t('dress_treat1_t')}</div>
+          <div style="font-size:13px;color:var(--t2);line-height:1.6">${t('dress_treat1_d')}</div>
         </div>
         <div>
-          <div style="font-family:'Newsreader',serif;font-size:18px;color:var(--ink);margin-bottom:8px">2 · Calm the immune response</div>
-          <div style="font-size:13px;color:var(--t2);line-height:1.6"><strong>Prednisone</strong> (a steroid, started Apr 19) suppresses the over-active immune response so each affected organ has space to heal. The taper happens slowly over weeks to months.</div>
+          <div style="font-family:'Newsreader',serif;font-size:18px;color:var(--ink);margin-bottom:8px">${t('dress_treat2_t')}</div>
+          <div style="font-size:13px;color:var(--t2);line-height:1.6">${t('dress_treat2_d')}</div>
         </div>
       </div>
       <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--line-soft);font-size:12.5px;color:var(--t3);line-height:1.6">
-        <strong style="color:var(--t2)">Supportive care for each affected organ —</strong> dialysis for the kidneys, transfusions for blood, electrolyte correction, and close monitoring of liver enzymes — runs alongside the immune treatment until each system can sustain itself.
+        ${t('dress_treat_support')}
       </div>
     </div>
 
-    <div class="sec"><h3>What recovery looks like</h3><div class="sec-line"></div><span class="sec-sub">timeline</span></div>
+    <div class="sec"><h3>${t('dress_rec_h')}</h3><div class="sec-line"></div><span class="sec-sub">${t('dress_rec_sub')}</span></div>
     <div class="tl-card">
       <div class="tl-row">
-        <div class="tl-date">Days</div>
-        <div class="tl-body">Stop the trigger. Begin steroids. Stabilise each affected organ with supportive care.</div>
+        <div class="tl-date">${t('dress_rec_days_l')}</div>
+        <div class="tl-body">${t('dress_rec_days_b')}</div>
       </div>
       <div class="tl-row">
-        <div class="tl-date">Weeks</div>
-        <div class="tl-body">Acute injury phases resolve in sequence. Liver enzymes typically normalise first. Bone marrow restarts production. Inflammation subsides.</div>
+        <div class="tl-date">${t('dress_rec_weeks_l')}</div>
+        <div class="tl-body">${t('dress_rec_weeks_b')}</div>
       </div>
       <div class="tl-row">
-        <div class="tl-date">Months</div>
-        <div class="tl-body">Steroid taper. Kidneys may take longer than other organs to fully resume independent function. Slow rebuild of liver-made proteins (albumin) continues even after the liver itself is healed.</div>
+        <div class="tl-date">${t('dress_rec_months_l')}</div>
+        <div class="tl-body">${t('dress_rec_months_b')}</div>
       </div>
       <div class="tl-row today">
-        <div class="tl-date">Long&nbsp;term<small>outlook</small></div>
-        <div class="tl-body">DRESS is rare, but most patients recover fully when the trigger is identified early and the immune response is calmed. Avoiding the offending drug class for life is essential.</div>
+        <div class="tl-date">${t('dress_rec_long_l')}<small>${t('dress_rec_long_lo')}</small></div>
+        <div class="tl-body">${t('dress_rec_long_b')}</div>
       </div>
     </div>
 
-    <div class="sec"><h3>Family Risk &amp; Genetics</h3><div class="sec-line"></div><span class="sec-sub">for your family</span></div>
+    <div class="sec"><h3>${t('dress_sec_family')}</h3><div class="sec-line"></div><span class="sec-sub">${t('dress_sec_family_sub')}</span></div>
     <div class="dress-section">${noHead(tDress('s3'))}</div>
 
-    <div class="sec"><h3>Recovery</h3><div class="sec-line"></div><span class="sec-sub">process &amp; outlook</span></div>
+    <div class="sec"><h3>${t('dress_sec_recovery')}</h3><div class="sec-line"></div><span class="sec-sub">${t('dress_sec_recovery_sub')}</span></div>
     <div class="dress-section">${noHead(tDress('s4'))}</div>
     <div class="dress-section">${noHead(tDress('s5'))}</div>
 
-    <div class="sec"><h3>Questions &amp; Answers</h3><div class="sec-line"></div><span class="sec-sub">from the family</span></div>
+    <div class="sec"><h3>${t('dress_sec_qa')}</h3><div class="sec-line"></div><span class="sec-sub">${t('dress_sec_qa_sub')}</span></div>
     <div class="dress-section">${noHead(tDress('qa'))}</div>
 
     <div class="notice" style="margin-top:var(--gap)">${t('disclaimer')}</div>
@@ -423,14 +416,14 @@ function renderGraphs(){
       const score=cNorm(mk,M[mk]?lastKnown(M[mk].v):null);
       const isChartOnly=cm&&cm.sys==='_chart';
       const dir=cm?cm.dir:'?';
-      const f=!cm?'—':dir==='lower'?`4-zone ↓ best≤${cm.best}`
-               :dir==='higher'?`4-zone ↑ best≥${cm.best}`
-               :`4-zone ± normal ${cm.nL}–${cm.nH}`;
-      const grp=meta.grp?`<span class="gp-grp-pill" style="background:${meta.grp==='marrow'?'#ffb34722':'#f7816622'};color:${meta.grp==='marrow'?'#ffb347':'#f78166'}">${meta.grp}</span>`:'';
+      const f=!cm?'—':dir==='lower'?`${t('gp_f_lower')}${cm.best}`
+               :dir==='higher'?`${t('gp_f_higher')}${cm.best}`
+               :`${t('gp_f_optimal')}${cm.nL}–${cm.nH}`;
+      const grp=meta.grp?`<span class="gp-grp-pill" style="background:${meta.grp==='marrow'?'#ffb34722':'#f7816622'};color:${meta.grp==='marrow'?'#ffb347':'#f78166'}">${meta.grp==='marrow'?t('gp_grp_marrow'):t('gp_grp_oxygen')}</span>`:'';
       const chartBadge=isChartOnly?`<span style="font-size:.65rem;color:var(--t3);margin-left:4px">${t('gp_chart_only')}</span>`:'';
       return `<tr>
-        <td>${grp}${meta.label}${chartBadge}</td>
-        <td class="gp-dim">${dir==='lower'?'↓ lower':dir==='higher'?'↑ higher':'± optimal'}</td>
+        <td>${grp}${tM(mk,'name')}${chartBadge}</td>
+        <td class="gp-dim">${dir==='lower'?t('gp_dir_lower'):dir==='higher'?t('gp_dir_higher'):t('gp_dir_optimal')}</td>
         <td class="gp-dim">${f}</td>
         <td style="color:${isChartOnly?'var(--t3)':hex};font-weight:500">${score!=null?Math.round(score):'—'}${isChartOnly?' *':''}</td>
       </tr>`;
@@ -494,7 +487,7 @@ function renderGraphs(){
         const ds=[];
         if(subs){
           subs.forEach((sub,si)=>{
-            if(incRaw) ds.push({label:subLabel(sub)+' (raw)',data:COMP_SUBRAW[sysKey][sub.key],
+            if(incRaw) ds.push({label:subLabel(sub)+t('legend_raw_suffix'),data:COMP_SUBRAW[sysKey][sub.key],
               borderColor:sub.color+'40',backgroundColor:'transparent',
               borderWidth:1,borderDash:[2,2],pointRadius:0,tension:.35,spanGaps:true,order:20+si});
             ds.push({label:subLabel(sub),data:COMP_SUBAVG[sysKey][sub.key],
@@ -509,11 +502,11 @@ function renderGraphs(){
           const col=gpMColor(key,sysKey);
           const series=gpMarkerSeries(key);
           const avg=key==='UO'?series:cRolling(series);
-          if(incRaw&&key!=='UO') ds.push({label:GP_MARKER_META[key].label+t('legend_raw_suffix'),data:series,
+          if(incRaw&&key!=='UO') ds.push({label:tM(key,'name')+t('legend_raw_suffix'),data:series,
             borderColor:col+'45',backgroundColor:'transparent',
             borderWidth:1,borderDash:[2,2],pointRadius:0,tension:.25,spanGaps:true,
             segment:{borderColor:ctx=>ctx.p1DataIndex-ctx.p0DataIndex>1&&ctx.p0DataIndex<DISCHARGE_IDX?'transparent':undefined}});
-          ds.push({label:GP_MARKER_META[key].label,data:avg,borderColor:col,backgroundColor:'transparent',
+          ds.push({label:tM(key,'name'),data:avg,borderColor:col,backgroundColor:'transparent',
             borderWidth:1.5,borderDash:[5,3],pointRadius:2,pointBackgroundColor:col,
             pointHoverRadius:5,tension:.3,spanGaps:true,
             segment:{borderColor:ctx=>ctx.p1DataIndex-ctx.p0DataIndex>1?(ctx.p0DataIndex>=DISCHARGE_IDX?col+'55':'transparent'):undefined}});
@@ -535,7 +528,7 @@ function renderGraphs(){
           scales:{
             x:{grid:{color:lineSoft+'60'},ticks:{color:t3c,font:{size:9,family:'JetBrains Mono'},maxRotation:40,autoSkip:true,maxTicksLimit:10},border:{display:false}},
             y:{min:0,max:110,grid:{color:lineSoft+'60'},
-               ticks:{color:t3c,font:{size:9,family:'JetBrains Mono'},maxTicksLimit:6,callback:v=>v===100?['Normal','100']:v===0?'Critical':v>100?null:v},
+               ticks:{color:t3c,font:{size:9,family:'JetBrains Mono'},maxTicksLimit:6,callback:v=>v===100?[t('axis_normal'),'100']:v===0?t('axis_critical'):v>100?null:v},
                border:{display:false}},
           },
         },
@@ -563,7 +556,7 @@ function renderGraphs(){
         GP_SYS_MARKERS[sysKey].forEach(key=>{
           const col=gpMColor(key,sysKey);
           const isChartOnly=COMP_MARKERS[key]&&COMP_MARKERS[key].sys==='_chart';
-          legEl.innerHTML+=`<div class="gp-leg"><div class="gp-leg-line" style="border-top:2px dashed ${col};margin-top:1px;width:18px"></div>${GP_MARKER_META[key].label}${isChartOnly?` <span style="color:var(--t3);font-size:.65rem">${t('gp_chart_only')}</span>`:''}</div>`;
+          legEl.innerHTML+=`<div class="gp-leg"><div class="gp-leg-line" style="border-top:2px dashed ${col};margin-top:1px;width:18px"></div>${tM(key,'name')}${isChartOnly?` <span style="color:var(--t3);font-size:.65rem">${t('gp_chart_only')}</span>`:''}</div>`;
         });
       }
 
