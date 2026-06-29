@@ -71,7 +71,7 @@ function renderOverview(){
       </div>
     </div>
 
-    <div class="sec"><h3>${t('sec_timeline')}</h3><div class="sec-line"></div><span class="sec-sub">timeline</span></div>
+    <div class="sec"><h3>${t('sec_timeline')}</h3><div class="sec-line"></div><span class="sec-sub">${t('sec_timeline_sub')}</span></div>
     <div class="tl-card">${tl}</div>
   `;
   setTimeout(()=>{
@@ -93,7 +93,7 @@ function markerCard(mKey,full){
   const score=cNorm(mKey,cur);
   const zone=zoneOf(score);
   const cid=`c-${mKey}-${cc++}`;
-  const stLbl=st==='ok'?t('badge_ok'):st==='hi'?t('badge_hi'):st==='lo'?t('badge_lo'):'No data';
+  const stLbl=st==='ok'?t('badge_ok'):st==='hi'?t('badge_hi'):st==='lo'?t('badge_lo'):t('badge_nodata');
   const valZone=`z-${zone}`;
   const trMap={imp:t('badge_imp'),watch:t('badge_watch'),hold:t('badge_hold'),dial:t('badge_dial'),tx:t('badge_tx')};
   const trCls={imp:'trend-imp',watch:'trend-watch',hold:'trend-hold',dial:'tx-dial',tx:'tx-tx'};
@@ -198,12 +198,12 @@ function renderHeatmap(){
     <div class="heat-card">
       <div class="heat-grid" style="grid-template-columns:120px repeat(${DATES.length},minmax(20px,1fr))">${dateHeader}${sections}</div>
       <div class="heat-legend">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.6px">Zones:</span>
-        <div class="heat-leg"><span class="heat-leg-dot" style="background:var(--z-normal)"></span>Normal (85–100)</div>
-        <div class="heat-leg"><span class="heat-leg-dot" style="background:var(--z-warn)"></span>Warning (60–84)</div>
-        <div class="heat-leg"><span class="heat-leg-dot" style="background:var(--z-danger)"></span>Danger (30–59)</div>
-        <div class="heat-leg"><span class="heat-leg-dot" style="background:var(--z-critical)"></span>Critical (0–29)</div>
-        <div class="heat-leg" style="margin-left:auto;color:var(--t3)"><span class="heat-leg-dot" style="background:linear-gradient(transparent 37.5%,var(--t3) 37.5%,var(--t3) 62.5%,transparent 62.5%),repeating-linear-gradient(45deg,var(--t3) 0 2px,transparent 2px 5px);opacity:.4"></span>No reading</div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.6px">${t('hm_zones')}</span>
+        <div class="heat-leg"><span class="heat-leg-dot" style="background:var(--z-normal)"></span>${t('z_normal')} (85–100)</div>
+        <div class="heat-leg"><span class="heat-leg-dot" style="background:var(--z-warn)"></span>${t('z_warn')} (60–84)</div>
+        <div class="heat-leg"><span class="heat-leg-dot" style="background:var(--z-danger)"></span>${t('z_danger')} (30–59)</div>
+        <div class="heat-leg"><span class="heat-leg-dot" style="background:var(--z-critical)"></span>${t('z_critical')} (0–29)</div>
+        <div class="heat-leg" style="margin-left:auto;color:var(--t3)"><span class="heat-leg-dot" style="background:linear-gradient(transparent 37.5%,var(--t3) 37.5%,var(--t3) 62.5%,transparent 62.5%),repeating-linear-gradient(45deg,var(--t3) 0 2px,transparent 2px 5px);opacity:.4"></span>${t('hm_noreading')}</div>
       </div>
     </div>
   `;
@@ -212,7 +212,7 @@ function renderHeatmap(){
   el.querySelectorAll('.heat-cell:not(.empty)').forEach(c=>{
     c.addEventListener('mouseenter',e=>{
       const d=c.dataset;
-      tip.innerHTML=`<strong>${d.marker}</strong> · ${d.date}<br>${d.val} ${d.unit} · score ${d.score}/100<span class="tip-zone">${d.zone}</span>`;
+      tip.innerHTML=`<strong>${d.marker}</strong> · ${d.date}<br>${d.val} ${d.unit} · ${t('hm_tip_score')} ${d.score}/100<span class="tip-zone">${t('z_'+d.zone)}</span>`;
       tip.style.display='block';
     });
     c.addEventListener('mousemove',e=>{
