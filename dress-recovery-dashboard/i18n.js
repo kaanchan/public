@@ -49,7 +49,7 @@ const LANGS = {
       story_diag_l: 'Diagnosis · ',
       story_diag:   'KA has been diagnosed with <strong><a onclick="switchTab(\'dress\')" style="color:var(--amber);cursor:pointer;text-decoration:underline;text-underline-offset:3px">DRESS Syndrome</a></strong> (Drug Reaction with Eosinophilia and Systemic Symptoms) — a rare immune reaction triggered by a Sulfa medication.',
       story_prog_l: 'Prognosis · ',
-      story_prog:   'Continued steroid therapy and dialysis support over the coming weeks, alongside close monitoring of all organ systems. The outlook is encouraging: all systems are expected to fully recover, with the kidneys being the slowest to complete their journey. Most people with DRESS return to a completely normal quality of life.',
+      story_prog:   'As of May 16, the dialysis catheter has been removed and KA has returned to full-time work — the acute treatment phase, including dialysis support, is complete. All systems have recovered: the liver and electrolytes are normal, blood counts are rebuilding, and kidney function (eGFR 65) is back in the normal range. Ongoing care is routine follow-up monitoring. Most people with DRESS return to a completely normal quality of life.',
       story_asof_l: 'As of May 16th, ',
       story_asof:   'KA is home and, as of May 16, free of the dialysis catheter — the nephrologist confirmed its removal on May 15. The independent kidney signal is now unmistakable: a 24-hour urine collection on May 12 measured 2,940 mL of output directly, and by May 16 creatinine had fallen to 1.37 with an eGFR of 65, the first reading in the normal range (above 60). Creatinine has dropped from 9.26 on Apr 28 through 1.98 on May 9 to 1.37 on May 16. The liver panel is fully normal and electrolytes are stable. KA has since resumed full-time work — a full recovery.',
       tl_1:  'Admitted. White cells very low, sodium 115, liver enzymes rising, creatinine elevated.',
@@ -240,7 +240,7 @@ const LANGS = {
       m_RDW_why:  '15.1 on Apr 28 — slightly above the 14.5 normal ceiling, which is actually a positive signal here: new red cells of different sizes entering circulation from the marrow. A rising RDW in this context means the marrow is at work.',
       m_NA_name: 'Sodium',
       m_NA_what: 'Primary electrolyte, governs cell water balance.',
-      m_NA_why:  'From critically low 115 at admission to 135 on May 9 — one step from the 136 normal floor. Sodium has been carefully corrected through dialysis and fluid management. Watching for sustained 136+.',
+      m_NA_why:  'From critically low 115 at admission to 135 on May 9 and 137 on May 16 — now within the normal range. Sodium was carefully corrected through dialysis and fluid management during the acute phase.',
       m_K_name: 'Potassium',
       m_K_what: 'Keeps the heart beating in rhythm.',
       m_K_why:  'Comfortably in range at 4.2 on Apr 28. Dialysis directly regulates this.',
@@ -249,7 +249,7 @@ const LANGS = {
       m_CL_why:  '95 on Apr 28 — just below the lower boundary, tracking the sodium pattern. Improving.',
       m_CO2_name: 'Bicarbonate',
       m_CO2_what: 'Blood acid-base buffer.',
-      m_CO2_why:  'Holding 26–27 over recent days — comfortably in range. Effective dialysis management.',
+      m_CO2_why:  'Held 26–27 through early May and 24 on May 16 — comfortably within range throughout.',
       m_ANION_name: 'Anion Gap',
       m_ANION_what: 'Detects unusual acid accumulation.',
       m_ANION_why:  '12 on May 9 — exactly at the upper boundary of the 8–12 normal range, down from 21.1 at peak. As kidney function recovers, the acid-base balance is normalizing. One of the cleaner electrolyte recoveries of this admission.',
@@ -261,9 +261,9 @@ const LANGS = {
       m_CA_why:  '8.4 on Apr 28 — very close to the 8.5 normal floor. Consistent improvement from 8.0 at discharge. Calcium supplementation is part of the outpatient plan alongside phosphorus management.',
       sys_kidney_name:   'Kidneys',
       sys_kidney_label:  'Kidneys',
-      sys_kidney_desc:   'The kidneys act as the body\'s filtration plant — removing waste, regulating minerals, and controlling fluid balance. When they need support, dialysis steps in. KA\'s kidneys are on outpatient dialysis and recovering rapidly: creatinine fell from a peak of 12.52 to 1.98 by May 9, and BUN is now within the normal range. The D markers in each chart show dialysis session days.',
+      sys_kidney_desc:   'The kidneys act as the body\'s filtration plant — removing waste, regulating minerals, and controlling fluid balance. When they need support, dialysis steps in. KA\'s kidneys have recovered: creatinine fell from a peak of 12.52 to 1.37 by May 16, eGFR returned to 65 (normal range), and the dialysis catheter was removed on May 16. The D markers in each chart mark the earlier dialysis session days.',
       sys_kidney_hl:     'Creatinine 1.98 on May 9 — down from 9.26 on Apr 28 · 7 sessions complete',
-      sys_kidney_status: 'Outpatient dialysis ongoing · kidneys recovering strongly',
+      sys_kidney_status: 'Off dialysis since May 16 · kidney function back in normal range',
       sys_liver_name:    'Liver',
       sys_liver_label:   'Liver',
       sys_liver_desc:    'The liver has two distinct recovery phases. The first — the <strong>injury phase</strong> — is complete: AST, ALT, and bilirubin are all fully normal. The second — <strong>protein synthesis rebuilding</strong> — is accelerating: albumin jumped from 2.4 at discharge to 3.4 on Apr 28, nearly reaching the 3.5 normal floor in just three days. Total protein is also climbing steadily.',
@@ -405,7 +405,7 @@ const LANGS = {
       story_diag_l:'निदान · ',
       story_diag:"कालाई <strong><a onclick=\"switchTab('dress')\" style=\"color:var(--amber);cursor:pointer;text-decoration:underline;text-underline-offset:3px\">DRESS Syndrome (औषधिजन्य गम्भीर प्रतिरक्षा प्रतिक्रिया)</a></strong> द्वारा निदान गरिएको छ — एक स्ल्फा औषधिमार्फत प्रतिरक्षा प्रतिक्रिया।",
       story_prog_l:'प्रगति · ',
-      story_prog:'स्टेरोइड थेरापी र डायलिसिस सहायता जारी। सबै अङ्ग प्रणालीहरू पूर्ण पुनर्प्राप्ति हुने अपेक्षा छ।',
+      story_prog:'मे १६ सम्म डायलाइसिस क्याथेटर हटाइसकिएको छ र KA पूर्ण समय काममा फर्किसकेका छन् — डायलाइसिस सहायतासहित तीव्र उपचार चरण पूरा भइसकेको छ। सबै अङ्ग प्रणालीहरू सुधार भइसकेका छन्: कलेजो र इलेक्ट्रोलाइट सामान्य छन्, रक्तकोष पुनर्निर्माण हुँदै छ, र मिर्गौलाको कार्यक्षमता (eGFR 65) सामान्य दायरामा फर्किएको छ। अबको हेरचाह नियमित अनुगमन मात्र हो। DRESS भएका अधिकांश व्यक्ति पूर्ण रूपमा सामान्य जीवनमा फर्कन्छन्।',
       story_asof_l:'मे १६ सम्मको स्थिति:',
       story_asof:'मे १६ सम्म: 🎉 डायलिसिस क्याथेटर हटाइएको छ र KA अब क्याथेटरबाट मुक्त छन्। मे १२ को २४-घण्टे पिसाब सङ्कलनमा 2,940 mL प्रत्यक्ष रूपमा मापन गरियो, जसले मिर्गौलाको स्वतन्त्र कार्य राम्रो रहेको पुष्टि गर्यो। मे १६ मा Creatinine 1.37 र प्रयोगशालाले छापेको eGFR 65 प्राप्त भयो, जुन 60 को सामान्य सीमाभन्दा माथिको पहिलो नतिजा हो। KA पूर्ण-समय काममा फर्किसकेका छन् — पूर्ण स्वास्थ्यलाभ।',
       dress_intro_h:'DRESS बुझ्ने परिचय',
@@ -508,7 +508,7 @@ const LANGS = {
       tl_27:'🎉 मे १५ मा नेफ्रोलोजिस्टले पुष्टि गरेपछि डायलिसिस क्याथेटर हटाइयो — KA अब क्याथेटरबाट मुक्त छन्। बाह्यरोगी metabolic panel (डायलिसिस बिना): eGFR 65, 60 को सामान्य सीमाभन्दा माथिको पहिलो नतिजा। Creatinine 1.37, BUN 19। Liver panel पूर्ण रूपमा सामान्य: AST 28, ALT 44, ALP 73, bilirubin 0.6। त्यसपछि KA पूर्ण-समय काममा फर्किसकेका छन् — पूर्ण स्वास्थ्यलाभ।',
       sys_kidney_name:'मिर्गौला',
       sys_kidney_label:'मिर्गौला',
-      sys_kidney_status:'बाह्य विभागीय डायलाइसिस जारी · मिर्गौलाको सुधार बलियो रूपमा भइरहेको',
+      sys_kidney_status:'मे १६ देखि डायलाइसिसमुक्त · मिर्गौलाको कार्यक्षमता सामान्य दायरामा',
       sys_kidney_desc:'मिर्गौला (वृक्क) फिल्ट्रेशन प्रणालीको स्थिति।',
       sys_kidney_hl:'मे ९ मा क्रिएटिनिन 1.98 — अप्रिल २८ को 9.26 बाट घटेको · ७ सत्र पूरा',
       sys_liver_name:'कलेजो',
@@ -579,7 +579,7 @@ const LANGS = {
       m_RDW_why:'रातो रक्तकोष उत्पादन फेरबदलसँग सम्बन्धित।',
       m_NA_name:'सोडियम',
       m_NA_what:'मुख्य इलेक्ट्रोलाइट।',
-      m_NA_why:'भर्ना हुँदा अत्यन्त कम 115 बाट मे ९ मा 135 पुगेको — 136 सामान्य न्यूनतम सीमाबाट केवल एक कदम टाढा। डायलाइसिस र तरल व्यवस्थापनमार्फत सोडियम सावधानीपूर्वक सुधार गरिएको छ। स्थायी रूपमा 136+ कायम रहने अवस्थाको निगरानी भइरहेको छ।',
+      m_NA_why:'भर्ना हुँदा अत्यन्त कम 115 बाट मे ९ मा 135 र मे १६ मा 137 पुगेको — अहिले सामान्य दायराभित्र। तीव्र चरणमा डायलाइसिस र तरल व्यवस्थापनमार्फत सोडियम सावधानीपूर्वक सुधार गरिएको थियो।',
       m_K_name:'पोटासियम',
       m_K_what:'हृदय तालसँग सम्बन्धित।',
       m_K_why:'हृदय तालसँग सम्बन्धित भएकाले नजिकबाट हेरिन्छ।',
@@ -701,7 +701,7 @@ const DRESS_CONTENT = {
         <li><strong>The Second Wave</strong> — Just as a patient begins to improve, the immune system can flare again — particularly when steroids are being tapered, or if a dormant virus (such as HHV-6) reactivates. This is expected and managed by the care team. It is not a setback — it is a known feature of DRESS recovery.</li>
         <li><strong>The Long Tail</strong> — Full immune system reset takes <strong>6 to 12 months</strong>. During this period, the thyroid and liver are monitored closely, as they are often the last systems to fully stabilise. Regular follow-up appointments are essential.</li>
       </ul>
-      <div class="dress-info"><p><strong>In KA's case:</strong> Prednisone (steroids) and dialysis support will continue for some weeks as the kidneys recover and the immune system is gradually brought down from its hyper-active state. The care team expects all systems to fully recover — the kidneys will be the slowest, but meaningful recovery is expected over time.</p></div>`,
+      <div class="dress-info"><p><strong>In KA's case:</strong> The dialysis catheter was removed on May 16 and KA has since returned to full-time work. With the acute treatment phase complete, ongoing care is routine follow-up monitoring rather than active organ support — all systems have effectively recovered, with kidney function back in the normal range.</p></div>`,
     s5: `<h2><span class="ds-num">5</span>Recovery &amp; Outlook</h2>
       <table class="dress-stat-table">
         <thead><tr><th>Category</th><th>Fact</th></tr></thead>
@@ -772,7 +772,7 @@ const DRESS_CONTENT = {
 <li><strong>दोस्रो उतारचढाव</strong> — बिरामी सुधारिँदै गर्दा प्रतिरक्षा प्रणाली फेरि सक्रिय हुन सक्छ, विशेष गरी steroids घटाउँदा वा HHV-6 जस्तो सुप्त virus फेरि सक्रिय हुँदा। यो चिनिएको विशेषता हो, अनिवार्य रूपमा setback होइन।</li>
 <li><strong>Long Tail</strong> — पूर्ण प्रतिरक्षा पुनःस्थिरतामा <strong>६ देखि १२ महिना</strong> लाग्न सक्छ। यो समयमा thyroid र कलेजो नजिकबाट हेरिन्छ। नियमित follow-up आवश्यक हुन्छ।</li>
 </ul>
-<div class="dress-info"><p><strong>काको अवस्थामा:</strong> Prednisone (steroids) र dialysis support केही समय जारी रहन सक्छ। मिर्गौला सुधार ढिलो हुन सक्छ, तर समयसँग अर्थपूर्ण सुधार अपेक्षित छ।</p></div>`,
+<div class="dress-info"><p><strong>काको अवस्थामा:</strong> मे १६ मा dialysis catheter हटाइयो र KA त्यसयता पूर्ण समय काममा फर्किसकेका छन्। तीव्र उपचार चरण पूरा भएकाले अबको हेरचाह सक्रिय अङ्ग सहायताभन्दा नियमित अनुगमन मात्र हो — सबै प्रणालीहरू प्रभावकारी रूपमा सुधार भइसकेका छन्, मिर्गौलाको कार्यक्षमता सामान्य दायरामा।</p></div>`,
     s5: `<h2><span class="ds-num">5</span>सुधार &amp; भविष्य दृष्टि</h2>
 <table class="dress-stat-table">
 <thead><tr><th>श्रेणी</th><th>तथ्य</th></tr></thead>
