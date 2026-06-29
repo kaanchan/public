@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
-   DATA  —  Apr 8 → May 12, 2026  (36 date points)
+   DATA  —  Apr 8 → May 16, 2026  (37 date points)
    ═══════════════════════════════════════════════════════════════ */
-const DATES=['Apr 8','Apr 9','Apr 10 AM','Apr 10 PM','Apr 11','Apr 12','Apr 13','Apr 14','Apr 15','Apr 16','Apr 17','Apr 18','Apr 19','Apr 20','Apr 21','Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28','Apr 29','Apr 30','May 1','May 2','May 3','May 4','May 5','May 6','May 7','May 8','May 9','May 10','May 11','May 12'];
+const DATES=['Apr 8','Apr 9','Apr 10 AM','Apr 10 PM','Apr 11','Apr 12','Apr 13','Apr 14','Apr 15','Apr 16','Apr 17','Apr 18','Apr 19','Apr 20','Apr 21','Apr 22','Apr 23','Apr 24','Apr 25','Apr 26','Apr 27','Apr 28','Apr 29','Apr 30','May 1','May 2','May 3','May 4','May 5','May 6','May 7','May 8','May 9','May 10','May 11','May 12','May 16'];
 const DIAL_IDX=[4,6,8,10,12,14,16,18,21,23,25,28,30,32,35]; // inpatient + outpatient (Apr 28, Apr 30, May 2, May 5, May 7, May 9, May 12)
 const DISCHARGE_IDX=18; // Apr 25 — discharged home, outpatient dialysis continues
 const TX_IDX=[10,11,12,14];
@@ -9,54 +9,54 @@ const TX_DIRECT=['HGB','RBC','HCT'];
 
 const M={
   CREAT:{abbr:'CREAT',unit:'mg/dL',sys:'kidney',nL:0.6,nH:1.2,
-    v:[3.6,6.3,4.7,4.37,5.04,7.23,9.32,7.91,9.63,8.37,10.47,12.29,8.99,10.76,12.52,8.72,10.46,6.67,8.76,null,null,9.26,null,null,null,null,null,null,2.56,null,null,null,1.98,null,null,null,null],dir:'lower',dial:true},
+    v:[3.6,6.3,4.7,4.37,5.04,7.23,9.32,7.91,9.63,8.37,10.47,12.29,8.99,10.76,12.52,8.72,10.46,6.67,8.76,null,null,9.26,null,null,null,null,null,null,2.56,null,null,null,1.98,null,null,1.66,1.37],dir:'lower',dial:true},
   BUN:{abbr:'BUN',unit:'mg/dL',sys:'kidney',nL:7,nH:20,
-    v:[31,56,33,30,39,50,63,45,54,35,43,54,36,45,53,31,38,24,35,null,null,28,null,null,null,null,null,null,20,null,null,null,20,null,null,null,null],dir:'lower',dial:true},
+    v:[31,56,33,30,39,50,63,45,54,35,43,54,36,45,53,31,38,24,35,null,null,28,null,null,null,null,null,null,20,null,null,null,20,null,null,16,19],dir:'lower',dial:true},
   GFR:{abbr:'GFR',unit:'mL/min',sys:'kidney',nL:60,nH:120,
-    v:[20,10,15,16,14,9,6,8,6,7,6,5,7,5,5,7,6,10,7,null,null,6.5,null,null,null,null,null,null,30,null,null,null,41,null,null,null,null],dir:'higher',dial:true},
+    v:[20,10,15,16,14,9,6,8,6,7,6,5,7,5,5,7,6,10,7,null,null,6.5,null,null,null,null,null,null,30,null,null,null,41,null,null,52,65],dir:'higher',dial:true},
   BUN_CREAT:{abbr:'BUN:Cr',unit:'ratio',sys:'kidney',nL:10,nH:20,
-    v:[null,null,null,7,8,7,7,6,6,4,4,4,4,4,4,4,4,6.67,8.76,null,null,3,null,null,null,null,null,null,7.8,null,null,null,10.1,null,null,null,null],dir:'optimal',dial:true},
+    v:[null,null,null,7,8,7,7,6,6,4,4,4,4,4,4,4,4,6.67,8.76,null,null,3,null,null,null,null,null,null,7.8,null,null,null,10.1,null,null,9.6,14],dir:'optimal',dial:true},
 
   AST:{abbr:'AST',unit:'U/L',sys:'liver',nL:10,nH:40,
-    v:[5604,5604,5604,3973,2318,901,516,279,170,119,88,68,53,47,39,31,27,23,21,null,null,27,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'lower',log:true,ceil:5604},
+    v:[5604,5604,5604,3973,2318,901,516,279,170,119,88,68,53,47,39,31,27,23,21,null,null,27,null,null,null,null,null,null,null,null,null,null,null,null,null,34,28],dir:'lower',log:true,ceil:5604},
   ALT:{abbr:'ALT',unit:'U/L',sys:'liver',nL:7,nH:56,
-    v:[3273,3273,3273,3111,2389,1737,1313,873,706,573,462,362,276,229,174,155,85,19,7,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'lower',log:true,ceil:3273},
+    v:[3273,3273,3273,3111,2389,1737,1313,873,706,573,462,362,276,229,174,155,85,19,7,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,44],dir:'lower',log:true,ceil:3273},
   ALKP:{abbr:'ALP',unit:'U/L',sys:'liver',nL:44,nH:147,
-    v:[236,272,310,356,320,275,254,213,172,165,152,140,130,117,104,100,102,96,91,null,null,94,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'lower'},
+    v:[236,272,310,356,320,275,254,213,172,165,152,140,130,117,104,100,102,96,91,null,null,94,null,null,null,null,null,null,null,null,null,null,null,null,null,77,73],dir:'lower'},
   BILT:{abbr:'BILI',unit:'mg/dL',sys:'liver',nL:0.2,nH:1.2,
-    v:[2.4,3.7,4.0,4.0,3.5,3.2,2.7,1.9,1.4,1.2,1.0,0.9,0.8,0.7,0.7,0.7,0.6,0.6,0.6,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'lower'},
+    v:[2.4,3.7,4.0,4.0,3.5,3.2,2.7,1.9,1.4,1.2,1.0,0.9,0.8,0.7,0.7,0.7,0.6,0.6,0.6,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,0.6],dir:'lower'},
   ALB:{abbr:'ALB',unit:'g/dL',sys:'liver',nL:3.5,nH:5.0,
-    v:[3.5,2.4,2.4,2.4,2.0,2.5,2.4,2.3,2.3,2.3,2.3,2.3,2.1,2.3,2.3,2.4,2.6,2.3,2.4,null,null,3.4,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher'},
+    v:[3.5,2.4,2.4,2.4,2.0,2.5,2.4,2.3,2.3,2.3,2.3,2.3,2.1,2.3,2.3,2.4,2.6,2.3,2.4,null,null,3.4,null,null,null,null,null,null,null,null,null,null,null,null,null,4.0,4.3],dir:'higher'},
   TPROT:{abbr:'T.PROT',unit:'g/dL',sys:'liver',nL:6.0,nH:8.5,
-    v:[6.5,5.2,4.9,4.9,4.4,4.5,4.5,4.6,4.7,4.8,4.9,4.9,4.7,4.7,4.4,4.9,5.1,4.8,4.9,null,null,5.5,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher'},
+    v:[6.5,5.2,4.9,4.9,4.4,4.5,4.5,4.6,4.7,4.8,4.9,4.9,4.7,4.7,4.4,4.9,5.1,4.8,4.9,null,null,5.5,null,null,null,null,null,null,null,null,null,null,null,null,null,6.4,6.5],dir:'higher'},
 
   WBC:{abbr:'WBC',unit:'K/µL',sys:'blood',nL:4.5,nH:11.0,
-    v:[0.67,0.97,1.61,1.5,1.4,2.0,3.0,5.0,5.5,6.0,6.2,8.4,7.4,7.5,7.3,5.6,8.0,6.5,7.8,null,null,7.2,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher'},
+    v:[0.67,0.97,1.61,1.5,1.4,2.0,3.0,5.0,5.5,6.0,6.2,8.4,7.4,7.5,7.3,5.6,8.0,6.5,7.8,null,null,7.2,null,null,null,null,null,null,null,null,null,null,null,null,null,7.6,null],dir:'higher'},
   HGB:{abbr:'HGB',unit:'g/dL',sys:'blood',nL:13.5,nH:17.5,
-    v:[12.2,11.3,11.4,11.4,10.2,9.5,9.8,8.5,7.3,7.2,6.9,7.4,6.3,7.0,7.4,7.5,7.4,7.2,7.4,null,null,8.4,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher',tx:true},
+    v:[12.2,11.3,11.4,11.4,10.2,9.5,9.8,8.5,7.3,7.2,6.9,7.4,6.3,7.0,7.4,7.5,7.4,7.2,7.4,null,null,8.4,null,null,null,null,null,null,null,null,null,null,null,null,null,11.3,null],dir:'higher',tx:true},
   PLT:{abbr:'PLT',unit:'K/µL',sys:'blood',nL:150,nH:400,
-    v:[89,73,77,82,65,65,79,112,139,187,193,233,232,210,195,205,191,161,150,null,null,174,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher'},
+    v:[89,73,77,82,65,65,79,112,139,187,193,233,232,210,195,205,191,161,150,null,null,174,null,null,null,null,null,null,null,null,null,null,null,null,null,219,null],dir:'higher'},
   RBC:{abbr:'RBC',unit:'M/µL',sys:'blood',nL:4.5,nH:5.5,
-    v:[4.0,3.62,3.69,3.74,3.34,3.07,3.22,2.83,2.39,2.37,2.29,2.46,2.07,2.37,2.54,2.49,2.51,2.43,2.45,null,null,2.78,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher',tx:true},
+    v:[4.0,3.62,3.69,3.74,3.34,3.07,3.22,2.83,2.39,2.37,2.29,2.46,2.07,2.37,2.54,2.49,2.51,2.43,2.45,null,null,2.78,null,null,null,null,null,null,null,null,null,null,null,null,null,3.64,null],dir:'higher',tx:true},
   HCT:{abbr:'HCT',unit:'%',sys:'blood',nL:41,nH:53,
-    v:[34.6,30.5,31.0,31.8,28.8,26.3,27.1,23.5,20.5,20.8,20.2,21.2,18.1,19.8,21.6,21.3,21.8,21.2,21.3,null,null,25.3,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'higher',tx:true},
+    v:[34.6,30.5,31.0,31.8,28.8,26.3,27.1,23.5,20.5,20.8,20.2,21.2,18.1,19.8,21.6,21.3,21.8,21.2,21.3,null,null,25.3,null,null,null,null,null,null,null,null,null,null,null,null,null,35.8,null],dir:'higher',tx:true},
   RDW:{abbr:'RDW',unit:'%',sys:'blood',nL:11.5,nH:14.5,
-    v:[11.3,11.2,11.1,11.7,11.7,11.9,11.4,11.6,12.3,12.5,12.4,13.0,13.0,14.5,14.0,14.3,14.2,14.2,14.3,null,null,15.1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'optimal'},
+    v:[11.3,11.2,11.1,11.7,11.7,11.9,11.4,11.6,12.3,12.5,12.4,13.0,13.0,14.5,14.0,14.3,14.2,14.2,14.3,null,null,15.1,null,null,null,null,null,null,null,null,null,null,null,null,null,15.4,null],dir:'optimal'},
 
   NA:{abbr:'Na',unit:'mmol/L',sys:'electrolytes',nL:136,nH:145,
-    v:[119,115,127,132,134,132,133,137,138,136,134,131,133,127,129,131,132,135,130,null,null,134,null,null,null,null,null,null,139,null,null,null,135,null,null,null,null],dir:'optimal'},
+    v:[119,115,127,132,134,132,133,137,138,136,134,131,133,127,129,131,132,135,130,null,null,134,null,null,null,null,null,null,139,null,null,null,135,null,null,136,137],dir:'optimal'},
   K:{abbr:'K',unit:'mmol/L',sys:'electrolytes',nL:3.5,nH:5.0,
-    v:[4.1,5.1,4.9,4.6,4.4,4.2,4.1,3.6,4.1,4.1,4.0,4.3,4.1,4.2,4.3,4.5,4.8,4.4,4.1,null,null,4.2,null,null,null,null,null,null,3.8,null,null,null,4.0,null,null,null,null],dir:'optimal'},
+    v:[4.1,5.1,4.9,4.6,4.4,4.2,4.1,3.6,4.1,4.1,4.0,4.3,4.1,4.2,4.3,4.5,4.8,4.4,4.1,null,null,4.2,null,null,null,null,null,null,3.8,null,null,null,4.0,null,null,3.9,3.7],dir:'optimal'},
   CL:{abbr:'Cl',unit:'mmol/L',sys:'electrolytes',nL:98,nH:106,
-    v:[86,80,88,96,96,92,93,98,98,96,94,94,96,92,95,98,96,98,93,null,null,95,null,null,null,null,null,null,101,null,null,null,97,null,null,null,null],dir:'optimal'},
+    v:[86,80,88,96,96,92,93,98,98,96,94,94,96,92,95,98,96,98,93,null,null,95,null,null,null,null,null,null,101,null,null,null,97,null,null,101,99],dir:'optimal'},
   CO2:{abbr:'CO₂',unit:'mmol/L',sys:'electrolytes',nL:23,nH:29,
-    v:[23,18,28,27,26,25,23,25,24,27,26,24,27,24,23,25,25,30,27,null,null,26,null,null,null,null,null,null,27,null,null,null,26,null,null,null,null],dir:'optimal'},
+    v:[23,18,28,27,26,25,23,25,24,27,26,24,27,24,23,25,25,30,27,null,null,26,null,null,null,null,null,null,27,null,null,null,26,null,null,25,24],dir:'optimal'},
   ANION:{abbr:'AG',unit:'mmol/L',sys:'electrolytes',nL:8,nH:12,
-    v:[10,17,10.6,13.6,16.4,19.2,21.1,17.6,20.1,17.1,18.0,17.3,14.1,15.2,15.3,12.5,15.8,11.4,14.1,null,null,13,null,null,null,null,null,null,11,null,null,null,12,null,null,null,null],dir:'lower'},
+    v:[10,17,10.6,13.6,16.4,19.2,21.1,17.6,20.1,17.1,18.0,17.3,14.1,15.2,15.3,12.5,15.8,11.4,14.1,null,null,13,null,null,null,null,null,null,11,null,null,null,12,null,null,10,null],dir:'lower'},
   GLU:{abbr:'GLU',unit:'mg/dL',sys:'electrolytes',nL:70,nH:100,
-    v:[101,133,112,127,181,116,108,104,108,90,91,87,91,94,85,122,109,87,82,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'optimal'},
+    v:[101,133,112,127,181,116,108,104,108,90,91,87,91,94,85,122,109,87,82,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,86],dir:'optimal'},
   CA:{abbr:'Ca',unit:'mg/dL',sys:'electrolytes',nL:8.5,nH:10.5,
-    v:[7.9,6.6,7.2,7.3,6.6,6.9,6.8,7.2,7.0,7.3,7.1,7.2,7.2,7.2,7.2,7.7,7.9,7.6,8.0,null,null,8.4,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null],dir:'optimal'},
+    v:[7.9,6.6,7.2,7.3,6.6,6.9,6.8,7.2,7.0,7.3,7.1,7.2,7.2,7.2,7.2,7.7,7.9,7.6,8.0,null,null,8.4,null,null,null,null,null,null,null,null,null,null,null,null,null,8.7,9.3],dir:'optimal'},
 };
 
 const SYSTEMS={
@@ -66,9 +66,10 @@ const SYSTEMS={
   electrolytes:{color:'elec',markers:['NA','K','CL','CO2','ANION','GLU','CA']},
 };
 
-// UO — first independent kidney signal; returned Apr 25, now well above normal range
+// UO — first independent kidney signal; returned Apr 25, now well above normal range.
+// May 12 (idx 35) = 2940 mL — directly measured 24-hour urine collection.
 M.UO={abbr:'UO',unit:'mL/day',sys:'kidney',nL:800,nH:2000,noProj:true,
-  v:[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,445,605,895,1055,1490,1995,2140,3330,3205,3150,3810,2310,3000,1800,2815,1595,2850,null,null],dir:'higher'};
+  v:[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,445,605,895,1055,1490,1995,2140,3330,3205,3150,3810,2310,3000,1800,2815,1595,2850,2940,null],dir:'higher'};
 
 // Trim all marker arrays to DATES length so adding dates never leaves orphan nulls
 Object.values(M).forEach(m=>{if(m.v)m.v.length=DATES.length;});
@@ -122,5 +123,6 @@ const TIMELINE=[
   {d:'May 5', tags:['kidney','procedure'],t:'Fourth outpatient dialysis (Treatment #4) at Ascend Clinical. Creatinine 2.56 — down from 9.26 on Apr 28. BUN 20, within normal range. Kidney recovery accelerating.'},
   {d:'May 7', tags:['kidney','procedure'],t:'Fifth outpatient dialysis (Treatment #5) at Ascend Clinical.'},
   {d:'May 9', tags:['kidney','milestone'],t:'🎉 Sixth outpatient dialysis (Treatment #6). Creatinine 1.98 — down from a peak of 12.52. BUN 20. Kidneys approaching near-normal waste clearance independently.'},
-  {d:'May 12',tags:['kidney','procedure'],t:'Seventh outpatient dialysis (Treatment #7) at Ascend Clinical. 24-hour urine collection submitted — results pending, will directly quantify independent kidney output.'},
+  {d:'May 12',tags:['kidney','procedure'],t:'Seventh outpatient dialysis (Treatment #7) at Ascend Clinical. 24-hour urine collection complete — 2,940 mL measured directly, confirming strong independent kidney output. Creatinine 1.66, eGFR ~52, BUN 16.'},
+  {d:'May 16',tags:['kidney','milestone'],t:'🎉 Dialysis catheter removed — KA is free of the catheter after the nephrologist confirmed it on May 15. Outpatient metabolic panel (no dialysis): eGFR 65, the first reading above the 60 normal threshold. Creatinine 1.37, BUN 19. Liver panel fully normal: AST 28, ALT 44, ALP 73, bilirubin 0.6. KA has since resumed full-time work — full recovery.'},
 ];

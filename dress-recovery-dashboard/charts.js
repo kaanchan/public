@@ -45,6 +45,7 @@ function renderUOEventsChart(canvasId){
     scales:{
       x:{stacked:true,ticks:{color:t3,font:{size:9,family:'JetBrains Mono'}},grid:{color:lineSoft+'80'},border:{display:false}},
       y:{stacked:true,min:0,
+        title:{display:true,text:M['UO'].unit,color:t3,font:{size:9,family:'JetBrains Mono'}},
         ticks:{color:t3,font:{size:9,family:'JetBrains Mono'},maxTicksLimit:5,callback:v=>v>=1000?(v/1000).toFixed(1)+'k':v},
         grid:{color:lineSoft+'80'},border:{display:false}},
     }

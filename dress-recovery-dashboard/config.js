@@ -4,10 +4,10 @@ const CONFIG = {
     relation: 'family'
   },
   header: {
-    badge:       'Updated May 12',
+    badge:       'Updated May 16',
     title:       "KA's Recovery",
-    subtitle:    'Lab results · April 8 to May 12, 2026 · 36 days tracked · Discharged Apr 25',
-    phase:       'RECOVERY · DAY 36 · HOME'
+    subtitle:    'Lab results · April 8 to May 16, 2026 · 37 days tracked · Discharged Apr 25',
+    phase:       'RECOVERY · DAY 37 · HOME'
   },
   defaults: {
     palette:  'warm',          // 'warm' | 'clinical' | 'editorial'

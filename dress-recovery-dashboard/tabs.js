@@ -34,11 +34,11 @@ function renderOverview(){
       <p><strong>${t('story_prog_l')}</strong>${t('story_prog')}</p>
       <p><strong>${t('story_asof_l')}</strong>${t('story_asof')}</p>
       <div class="meta-row">
-        <div class="meta-pill"><div class="lbl">Days tracked</div><div class="val"><em>26</em></div></div>
+        <div class="meta-pill"><div class="lbl">Days tracked</div><div class="val"><em>27</em></div></div>
         <div class="meta-pill"><div class="lbl">Dialysis sessions</div><div class="val"><em>11</em></div></div>
         <div class="meta-pill"><div class="lbl">Transfusions</div><div class="val"><em>4</em></div></div>
         <div class="meta-pill"><div class="lbl">Liver injury</div><div class="val">Resolved <em>🎉</em></div></div>
-        <div class="meta-pill"><div class="lbl">UO Apr 25–May 3</div><div class="val"><em>445→3,205 mL</em></div></div>
+        <div class="meta-pill"><div class="lbl">UO Apr 25–May 12</div><div class="val"><em>445→2,940 mL</em></div></div>
         <div class="meta-pill"><div class="lbl">Outlook</div><div class="val">Encouraging</div></div>
       </div>
     </div>
