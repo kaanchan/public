@@ -1,7 +1,9 @@
 # PENDING-TASK — public
 
-Status as of 2026-09-07 07:31 NST: nothing in progress. Last swarm run
-(`20260907T064155-public`) found no unblocked code unit — see PROGRESS.jsonl.
+Status as of 2026-09-07 08:24 NST: nothing in progress. Re-verified this run
+(`20260907T082259-w2-public`) — checked `gh issue view 1/2 --json comments`,
+no reply from KA since the prior run's automated triage comments (01:48 UTC).
+No new issues filed. Still no unblocked code unit — see PROGRESS.jsonl.
 
 ## What happened this run
 
