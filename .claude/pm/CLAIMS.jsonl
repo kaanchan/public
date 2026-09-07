@@ -1,0 +1,4 @@
+{"ts": "2026-09-07T01:46:30Z", "agent": "swarm 20260907T064155-public", "issue": 1, "status": "claimed", "note": "file LICENSE issue, needs license type from KA"}
+{"ts": "2026-09-07T01:46:30Z", "agent": "swarm 20260907T064155-public", "issue": 1, "status": "done", "note": "issue filed, blocked on KA license-type decision"}
+{"ts": "2026-09-07T01:46:30Z", "agent": "swarm 20260907T064155-public", "issue": 2, "status": "claimed", "note": "privacy review of DRESS dashboard clinical data"}
+{"ts": "2026-09-07T01:46:30Z", "agent": "swarm 20260907T064155-public", "issue": 2, "status": "done", "note": "audit done, findings filed, no code change needed"}
