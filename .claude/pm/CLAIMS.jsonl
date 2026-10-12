@@ -4,3 +4,5 @@
 {"ts": "2026-09-07T01:46:30Z", "agent": "swarm 20260907T064155-public", "issue": 2, "status": "done", "note": "audit done, findings filed, no code change needed"}
 {"ts": "2026-09-07T02:39:40Z", "agent": "swarm 20260907T082259-w2-public", "issue": 1, "status": "claimed", "note": "re-verify #1/#2 still blocked before picking new unit"}
 {"ts": "2026-09-07T02:39:40Z", "agent": "swarm 20260907T082259-w2-public", "issue": 1, "status": "done", "note": "confirmed no KA reply on #1/#2; no unblocked unit found"}
+{"ts": "2026-10-12T10:49:10Z", "agent": "swarm 20261012T154840-public", "issue": 1, "status": "claimed", "note": "wave 22: sub-issue, closure, docs link check"}
+{"ts": "2026-10-12T10:49:42Z", "agent": "swarm 20261012T154840-public", "issue": 1, "status": "done", "commit": "cb1b032", "branch": "swarm/20261012-wave", "note": "docs pointer; sub-issue/closure/unit none applicable"}

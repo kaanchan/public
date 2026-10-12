@@ -1,3 +1,4 @@
 {"ts": "2026-09-07T01:46:30Z", "issue": 1, "repo": "public", "type": "chore", "digest": "Filed LICENSE issue; no license file exists, license type is KA's call, blocked"}
 {"ts": "2026-09-07T01:46:30Z", "issue": 2, "repo": "public", "type": "research", "digest": "Privacy-reviewed dress-recovery-dashboard clinical data; README claim holds, one residual (clinic name) is KA's call"}
 {"ts": "2026-09-07T02:39:40Z", "issue": 1, "repo": "public", "type": "chore", "digest": "Re-verified #1 and #2 still open, unanswered by KA, no new issues filed; no unblocked code unit this run"}
+{"ts": "2026-10-12T10:49:42Z", "issue": 1, "repo": "public", "type": "docs", "digest": "Wave 22: 0 sub-issue pairs, 0 closable, no unblocked unit (#1/#2 await KA); README Start-here pointer added (cb1b032), link check 0 broken"}
