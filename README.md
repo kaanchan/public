@@ -1,5 +1,7 @@
 # kaanchan/public
 
+> **Start here:** the live demo is the [DRESS Recovery Dashboard](https://kaanchan.github.io/public/dress-recovery-dashboard/).
+
 A public-facing repo for projects with web-viewable content.
 
 ---
