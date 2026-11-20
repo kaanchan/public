@@ -1,0 +1,4 @@
+# agent scratch: ignored except the README (mooladhara/standards/tmp-folder-protocol.md). Keep the /* form: git cannot re-include a file under an ignored directory.
+.claude/tmp/*
+!.claude/tmp/README.md
+!.claude/tmp/.gitkeep
